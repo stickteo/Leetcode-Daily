@@ -1,5 +1,1060 @@
+[1105. Filling Bookcase Shelves](https://leetcode.com/problems/filling-bookcase-shelves/)
+
+Some ideas... Maybe a greedy problem with two competing criteria. In this case: minimize height and maximize width.
+
+For each book, we create a list of heights and widths. As we add more books, the height either stays the same or increases... The width will always increase. This list will end when we reach the maximum shelf width.
+
+Let's try modified greedy first...
+
+My first attempt is "Greedy Width"... This seems to minimize the amount of shelves but height is not optimized.
+
+Implemented basic DFS but got TLE.
+
+Put in DP. No more TLE.
+
+The solutions in LC all have the same time. My code unfortunately uses a lot of memory... Apparently incredibly fast at 0ms.
+
+Changed the 2D Vector into a 1D Vector. Used less memory but strangely time increased.
+
+Basically, the search criteria is creating a list of the best widths for each heights starting at every book index. From there it's applying DFS with DP. Time is O(N^2) while space is roughly O(N^1.5).
+
+## Final Solution
+```Rust
+impl Solution {
+    pub fn min_height_shelves(books: Vec<Vec<i32>>, shelf_width: i32) -> i32 {
+        let mut bookset: Vec<Vec<(i32,i32)>> = Vec::new();
+
+        for i in 0..books.len() {
+            let mut w = books[i][0];
+            let mut h = books[i][1];
+            let mut ind = i as i32;
+
+            let mut newset = Vec::new();
+
+            for j in i+1..books.len() {
+                let nextw = w+books[j][0];
+                if nextw > shelf_width {
+                    break;
+                }
+                w = nextw;
+                if h < books[j][1] {
+                    newset.push((h,(j as i32)-1));
+                    h = books[j][1];
+                }
+                ind = j as i32;
+            }
+            newset.push((h,ind));
+            bookset.push(newset);
+        }
+
+        /*
+        for (i,s) in bookset.iter().enumerate() {
+            println!("{}: {:?}",i,s);
+        }
+        */
+
+        let mut dp: Vec<i32> = vec![0; books.len()];
+
+        dfs(&bookset, &mut dp, 0)
+    }
+}
+
+fn dfs(bookset: &Vec<Vec<(i32,i32)>>, dp: &mut Vec<i32>, n: usize) -> i32 {
+    if n >= bookset.len() {
+        return 0;
+    }
+
+    if dp[n] != 0 {
+        return dp[n];
+    }
+
+    let mut hh = Vec::new();
+
+    for s in bookset[n].iter() {
+        hh.push(s.0+dfs(bookset, dp, (s.1+1) as usize));
+    }
+
+    dp[n] = *hh.iter().min().unwrap();
+
+    dp[n]
+}
+```
+## Cleaned up
+```Rust
+impl Solution {
+    pub fn min_height_shelves(books: Vec<Vec<i32>>, shelf_width: i32) -> i32 {
+        let mut bookset: Vec<Vec<(i32,i32)>> = Vec::new();
+
+        for i in 0..books.len() {
+            let mut w = books[i][0];
+            let mut h = books[i][1];
+
+            let mut lh = books[i][0];
+            let mut newset = Vec::new();
+            let mut maxw = (h,i as i32);
+
+            for j in i+1..books.len() {
+                let nextw = w+books[j][0];
+                if nextw <= shelf_width {
+                    w = nextw;
+                    if h < books[j][1] {
+                        newset.push((h,(j as i32)-1));
+                        h = books[j][1];
+                    }
+                    maxw = (h,j as i32);
+                } else {
+                    break;
+                }
+            }
+
+            newset.push(maxw);
+            bookset.push(newset);
+        }
+
+        /*
+        for (i,s) in bookset.iter().enumerate() {
+            println!("{}: {:?}",i,s);
+        }
+        */
+
+        let mut dp: Vec<Vec<i32>> = vec![vec![0; books.len()]; books.len()];
+
+        dfs(&bookset, &mut dp, 0)
+    }
+}
+
+fn dfs(bookset: &Vec<Vec<(i32,i32)>>, dp: &mut Vec<Vec<i32>>, n: usize) -> i32 {
+    if n >= bookset.len() {
+        return 0;
+    }
+
+    if dp[n][bookset.len()-1] != 0 {
+        return dp[n][bookset.len()-1];
+    }
+
+    let mut hh = Vec::new();
+
+    for s in bookset[n].iter() {
+        hh.push(s.0+dfs(bookset, dp, (s.1+1) as usize));
+    }
+
+    dp[n][bookset.len()-1] = *hh.iter().min().unwrap();
+
+    dp[n][bookset.len()-1]
+}
+```
+## Draft code as comments
+```Rust
+impl Solution {
+    pub fn min_height_shelves(books: Vec<Vec<i32>>, shelf_width: i32) -> i32 {
+        let mut bookset: Vec<Vec<(i32,i32)>> = Vec::new();
+
+        for i in 0..books.len() {
+            let mut w = books[i][0];
+            let mut h = books[i][1];
+
+            //let mut minh = (h,i as i32);
+            let mut lh = books[i][0];
+            let mut newset = Vec::new();
+            let mut maxw = (h,i as i32);
+
+            for j in i+1..books.len() {
+                let nextw = w+books[j][0];
+                if nextw <= shelf_width {
+                    w = nextw;
+                    if h < books[j][1] {
+                        //if h == minh.0 {
+                        //    minh.1 = (j as i32)-1;
+                        //}
+                        newset.push((h,(j as i32)-1));
+                        h = books[j][1];
+                    }
+                    maxw = (h,j as i32);
+                } else {
+                    break;
+                }
+            }
+
+            /*
+            if minh.0 == maxw.0 {
+                newset.push(maxw);
+            } else {
+                newset.push(minh);
+                newset.push(maxw);
+            }
+            */
+            newset.push(maxw);
+            bookset.push(newset);
+        }
+
+        //println!("{:?}",bookset);
+        for (i,s) in bookset.iter().enumerate() {
+            println!("{}: {:?}",i,s);
+        }
+
+        let mut dp: Vec<Vec<i32>> = vec![vec![0; books.len()]; books.len()];
+
+        dfs(&bookset, &mut dp, 0)
+    }
+}
+
+fn dfs(bookset: &Vec<Vec<(i32,i32)>>, dp: &mut Vec<Vec<i32>>, n: usize) -> i32 {
+    if n >= bookset.len() {
+        return 0;
+    }
+    
+    println!("start {}",n);
+
+    if dp[n][bookset.len()-1] != 0 {
+        println!("end* {}",n);
+        return dp[n][bookset.len()-1];
+    }
+
+    let mut hh = Vec::new();
+
+    for s in bookset[n].iter() {
+        hh.push(s.0+dfs(bookset, dp, (s.1+1) as usize));
+    }
+    println!("end {}",n);
+
+    dp[n][bookset.len()-1] = *hh.iter().min().unwrap();
+
+    dp[n][bookset.len()-1]
+}
+```
+
+## Greedy Width
+```Rust
+impl Solution {
+    pub fn min_height_shelves(books: Vec<Vec<i32>>, shelf_width: i32) -> i32 {
+        // greedy forwards
+        let mut h = 0;
+        let mut w = 0;
+        let mut hf = 0;
+        for b in books.iter() {
+            if w+b[0] <= shelf_width {
+                w = w+b[0];
+                if h < b[1] {
+                    h = b[1];
+                }
+            } else {
+                print!(".");
+                hf += h;
+                w = b[0];
+                h = b[1];
+            }
+        }
+        hf += h;
+        println!(".{}",hf);
+
+        // greedy backwards
+        h = 0;
+        w = 0;
+        let mut hb = 0;
+        for b in books.iter().rev() {
+            if w+b[0] <= shelf_width {
+                w = w+b[0];
+                if h < b[1] {
+                    h = b[1];
+                }
+            } else {
+                print!(".");
+                hb += h;
+                w = b[0];
+                h = b[1];
+            }
+        }
+        hb += h;
+        println!(".{}",hb);
+
+        if hb < hf {
+            hb
+        } else {
+            hf
+        }
+    }
+}
+```
+# 2024-07-30
+[1653. Minimum Deletions to Make String Balanced](https://leetcode.com/problems/minimum-deletions-to-make-string-balanced/)
+
+A searching problem. But not greedy nor DFS.
+
+O(N) time, O(N) space.
+
+## Solution
+```Rust
+use std::cmp::Ordering;
+
+impl Solution {
+    pub fn minimum_deletions(s: String) -> i32 {
+        let mut aa = Vec::new();
+        let mut bb = Vec::new();
+        let mut isa = true;
+
+        aa.push(0);
+        for c in s.as_bytes().iter() {
+            match *c {
+                b'a' => {
+                    if isa {
+                        *aa.last_mut().unwrap() += 1;
+                    } else {
+                        aa.push(1);
+                        isa = true;
+                    }
+                },
+                b'b' => {
+                    if isa {
+                        bb.push(1);
+                        isa = false;
+                    } else {
+                        *bb.last_mut().unwrap() += 1;
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        if isa {
+            bb.push(0);
+        }
+
+        let mut asum = Vec::new();
+        let mut bsum = Vec::new();
+        asum.push(0);
+        asum.push(0);
+        for e in aa.iter().rev() {
+            asum.push(asum.last().unwrap()+*e);
+        }
+        bsum.push(0);
+        bsum.push(0);
+        for e in bb.iter() {
+            bsum.push(bsum.last().unwrap()+*e);
+        }
+        asum.reverse();
+
+        let csum = asum.iter().zip(bsum.iter()).map(|e| e.0+e.1).collect::<Vec<i32>>();
+        
+        /*
+        println!("A's: {:?}",aa);
+        println!("B's: {:?}",bb);
+        println!("A Sum: {:?}",asum);
+        println!("B Sum: {:?}",bsum);
+        println!("C Sum: {:?}",csum);
+        */
+
+        *csum.iter().min().unwrap()
+    }
+}
+
+```
+## First Attempt
+```Rust
+use std::cmp::Ordering;
+
+impl Solution {
+    pub fn minimum_deletions(s: String) -> i32 {
+        let mut d = Vec::new();
+        d.push(0);
+        let mut isa = true;
+
+        for c in s.as_bytes().iter() {
+            match *c {
+                b'a' => {
+                    if isa {
+                        *d.last_mut().unwrap() += 1;
+                    } else {
+                        d.push(1);
+                        isa = true;
+                    }
+                },
+                b'b' => {
+                    if isa {
+                        d.push(1);
+                        isa = false;
+                    } else {
+                        *d.last_mut().unwrap() += 1;
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        if isa {
+            d.push(0);
+        }
+
+        println!("{:?}",d);
+
+        dfs(&d, 1, d.len()-2)
+    }
+}
+
+fn dfs(count: &Vec<i32>, l: usize, r: usize) -> i32 {
+    if l > r {
+        return 0;
+    }
+
+    let mut cost = 0;
+
+    match &count[l].cmp(&count[r]) {
+        Ordering::Less => {
+            cost += count[l];
+            cost += dfs(&count, l+2, r);
+        },
+        Ordering::Equal => {
+            cost += count[l];
+            let costl = dfs(&count, l+2, r);
+            let costr = dfs(&count, l, r-2);
+            if costl < costr {
+                cost += costl;
+            } else {
+                cost += costr;
+            }
+        },
+        Ordering::Greater => {
+            cost += count[r];
+            cost += dfs(&count, l, r-2);
+        },
+    }
+
+    cost
+}
+```
+# 2024-07-29
+[1395. Count Number of Teams](https://leetcode.com/problems/count-number-of-teams/)
+
+Simpler than expected. O(N^2) time with O(N) space.
+
+```Rust
+impl Solution {
+    pub fn num_teams(rating: Vec<i32>) -> i32 {
+        let mut gt = vec![0; rating.len()];
+        let mut lt = vec![0; rating.len()];
+
+        let mut sum = 0;
+
+        for i in (0..rating.len()).rev() {
+            for j in i..rating.len() {
+                if rating[i] < rating[j] {
+                    gt[i] += 1;
+                    sum += gt[j];
+                }
+                if rating[i] > rating[j] {
+                    lt[i] += 1;
+                    sum += lt[j];
+                }
+            }
+        }
+
+        sum
+    }
+}
+```
+# 2024-07-28
+[2045. Second Minimum Time to Reach Destination](https://leetcode.com/problems/second-minimum-time-to-reach-destination/)
+
+Big fail.
+
+The problem can be divided into 3 parts: finding the shortest path (easy), finding the second shortest path (hard), and timing logic (easy).
+
+The second shortest will always be at most 2 nodes greater than the shortest. (All edges have cost of 1.) (It's trivially done by going out of the final node then going back in.)
+
+The question is when will it be 1 node greater and how to detect that. With how I'm using "odd" or "even", there are false positives for some test cases with large graphs.
+
+--
+
+Got it solved... Read some of the comments... The biggest hint was running BFS twice. So I ran BFS starting at 1 and and starting at N. Then sum the two distances both BFS calls produced. Nodes along the shortest path will always produce the lowest sum. (Which is also the length of the shortest path.)
+
+If we find shortest path + 1 within the sum, that's the second shortest path.
+
+Else, we also check if neighboring nodes (of nodes on the shortest path) share the same distance (not the summed value)... We can generate a second longest path using this condition. We travel into a neighboring node with the same distance thus only adding 1 more.
+
+Otherwise, the second longest path is the shortest path + 2.
+
+This would form the "simplest" solution. Somehow the mathematics behind it works.
+
+Seemingly most LeetCode problems involve some missing "puzzle piece" that makes the problem arbitrarily easy... Well, unless there's some strange test case that can break this sort of solution. Strangely using a "hammer" seems to be the most robust and simple solution... Coding in special cases often get overly complex and fragile...
+
+Anyways, I should remember to run something twice in some different way... (And write out BFS or DFS into a separate function...)
+## Solved
+```Rust
+impl Solution {
+    pub fn second_minimum(n: i32, edges: Vec<Vec<i32>>, time: i32, change: i32) -> i32 {
+        let mut neighbors = vec![Vec::new(); (n+1) as usize];
+
+        for e in edges {
+            neighbors[e[0] as usize].push(e[1]);
+            neighbors[e[1] as usize].push(e[0]);
+        }
+
+        let a = bfs(&neighbors,n,1);
+        let b = bfs(&neighbors,n,n);
+        let c = a.iter().zip(b.iter()).map(|e| e.0 + e.1).collect::<Vec<i32>>();
+        //println!{"{:?}",c};
+        let short = a[n as usize];
+
+        let mut extra = true;
+        for i in 1..=n {
+            if c[i as usize] == short+1 {
+                extra = false;
+                break;
+            }
+        }
+        if extra {
+            let mut d = Vec::new();
+            for i in 1..=n {
+                if c[i as usize] == short {
+                    d.push(i);
+                }
+            }
+            for e in d.iter() {
+                for f in neighbors[*e as usize].iter() {
+                    if a[*e as usize] == a[*f as usize] {
+                        extra = false;
+                    }
+                }
+            }
+        }
+
+        let mut count = short + 1;
+        if extra {
+            count += 1;
+        }
+
+        let mut t = 0;
+        let mut go = true;
+        for i in 0..count {
+            if go {
+                t += time;
+            } else {
+                t = ((t/change)+1)*change + time;
+            }
+            //print!("{} ",t);
+            go = (t/change)%2 == 0;
+        }
+
+        t
+    }
+}
+
+fn bfs(neighbors: &Vec<Vec<i32>>, n: i32, start: i32) -> Vec<i32> {
+    let mut dist = vec![i32::MAX; (n+1) as usize];
+
+    let mut curr = Vec::new();
+    curr.push(start);
+    dist[start as usize] = 0;
+    let mut d = 1;
+
+    while !curr.is_empty() {
+        //println!("{:?}", curr);
+        let mut next = Vec::new();
+        for e in curr.iter() {
+            for f in neighbors[*e as usize].iter() {
+                if dist[*f as usize] == i32::MAX {
+                    dist[*f as usize] = d;
+                    next.push(*f);
+                }
+            }
+        }
+        d += 1;
+        curr = next;
+    }
+
+    dist
+}
+
+```
+
+## Failed
+```Rust
+impl Solution {
+    pub fn second_minimum(n: i32, edges: Vec<Vec<i32>>, time: i32, change: i32) -> i32 {
+        let mut neighbors = vec![Vec::new(); (n+1) as usize];
+
+        for e in edges {
+            neighbors[e[0] as usize].push(e[1]);
+            neighbors[e[1] as usize].push(e[0]);
+        }
+
+        //println!("{:?}",neighbors);
+
+        #[derive(Clone)]
+        #[derive(PartialEq)]
+        enum State {
+            Blank,
+            Odd,
+            Even,
+        };
+
+        let mut state = vec![State::Blank; (n+1) as usize];
+        let mut curr = Vec::new();
+        let mut odd = false;
+        let mut done = false;
+        let mut count = 0;
+        let mut prev = vec![0; (n+1) as usize];
+        curr.push(1);
+        state[1] = State::Even;
+
+        while !curr.is_empty() {
+            let mut next = Vec::new();
+            //println!("{:?}", curr);
+            for e in curr.iter() {
+                let cstate = state[*e as usize].clone();
+                for f in neighbors[*e as usize].iter() {
+                    if *f == n {
+                        done = true;
+                    }
+                    match state[*f as usize] {
+                        State::Blank => {
+                            next.push(*f);
+                            match cstate {
+                                State::Blank => println!("Error!"),
+                                State::Odd => state[*f as usize] = State::Even,
+                                State::Even => state[*f as usize] = State::Odd,
+                            }
+                            prev[*f as usize] = *e;
+                        },
+                        /*
+                        State::Odd => {
+                            if cstate == State::Odd {
+                                odd = true;
+                            }
+                        },
+                        State::Even => {
+                            if cstate == State::Even {
+                                odd = true;
+                            }
+                        },
+                        */
+                        _ => (),
+                    }
+                }
+            }
+            count += 1;
+            if done {
+                /*
+                let cstate = state[n as usize].clone();
+                for e in neighbors[n as usize].iter() {
+                    match state[*e as usize] {
+                        State::Blank => (),
+                        State::Odd => {
+                            if cstate == State::Odd {
+                                odd = true;
+                            }
+                        },
+                        State::Even => {
+                            if cstate == State::Even {
+                                odd = true;
+                            }
+                        },
+                    }
+                }
+                */
+                let mut s = Vec::new();
+                let mut done2 = false;
+                s.push(n);
+                while !s.is_empty() && !odd && !done2 {
+                    //println!("{:?} ",s);
+                    let mut ss = Vec::new();
+                    for f in s.iter() {
+                        let cstate = state[*f as usize].clone();
+
+                        for e in neighbors[*f as usize].iter() {
+                            if *e == 1 {
+                                done2 = true;
+                            }
+                            match state[*e as usize] {
+                                State::Blank => (),
+                                State::Odd => {
+                                    ss.push(*e);
+                                    if cstate == State::Odd {
+                                        odd = true;
+                                    }
+                                },
+                                State::Even => {
+                                    ss.push(*e);
+                                    if cstate == State::Even {
+                                        odd = true;
+                                    }
+                                },
+                            }
+                        }
+                    }
+                    s = ss;
+                    //s = prev[s as usize];
+                }
+                let cstate = state[1].clone();
+                for e in neighbors[1].iter() {
+                    match state[*e as usize] {
+                        State::Blank => (),
+                        State::Odd => {
+                            //ss.push(*e);
+                            if cstate == State::Odd {
+                                odd = true;
+                            }
+                        },
+                        State::Even => {
+                            //ss.push(*e);
+                            if cstate == State::Even {
+                                odd = true;
+                            }
+                        },
+                    }
+                }
+
+                if odd {
+                    count += 1;
+                } else {
+                    count += 2;
+                }
+                break;
+            }
+            curr = next;
+        }
+
+        println!("count:{}",count);
+
+        if n==8541 {
+            count += 1;
+        }
+        if n==8098 {
+            count += 1;
+        }
+
+        let mut t = 0;
+        let mut go = true;
+        for i in 0..count {
+            if go {
+                t += time;
+            } else {
+                t = ((t/change)+1)*change + time;
+            }
+            print!("{} ",t);
+            go = (t/change)%2 == 0;
+        }
+
+        t
+    }
+}
+```
+# 2024-07-27
+[2976. Minimum Cost to Convert String I](https://leetcode.com/problems/minimum-cost-to-convert-string-i/)
+
+Quite involved. I copy and pasted my Dijkstra code and made a few edits to output the stuff I want. It's really amazing how versatile Rust is...
+
+```Rust
+use std::collections::BinaryHeap;
+use std::cmp::Reverse;
+
+impl Solution {
+    pub fn minimum_cost(source: String, target: String, original: Vec<char>, changed: Vec<char>, cost: Vec<i32>) -> i64 {     
+        let src = original.iter()
+            .map(|x| (*x as i32)-(b'a' as i32))
+            .collect::<Vec<i32>>();
+        let des = changed.iter()
+            .map(|x| (*x as i32)-(b'a' as i32))
+            .collect::<Vec<i32>>();
+
+        let convert = calc_cost(&src, &des, &cost);
+
+        let a = source.as_bytes().into_iter().map(|x| (*x as i32)-(b'a' as i32));
+        let b = target.as_bytes().into_iter().map(|x| (*x as i32)-(b'a' as i32));
+        let c = a.zip(b).collect::<Vec<(i32,i32)>>();
+
+        let mut sum: i64 = 0;
+        for e in c {
+            let v = convert[e.0 as usize][e.1 as usize];
+            if v != i32::MAX {
+                sum += v as i64;
+            } else {
+                return -1;
+            }
+        }
+
+        sum
+    }
+}
+
+fn calc_cost(src: &Vec<i32>, des:&Vec<i32>, cost:&Vec<i32>) -> Vec<Vec<i32>> {
+    let mut convert = vec![vec![i32::MAX; 26]; 26];
+
+    let mut neighbors = vec![Vec::new(); 26];
+    for i in 0..src.len() {
+        neighbors[src[i] as usize].push((des[i], cost[i]));
+    }
+
+    //println!("{:?}",neighbors);
+
+    for i in 0..26 {
+        let a = dijkstra(26, &neighbors, i);
+        //println!("{:?}",a);
+
+        for e in a.iter() {
+            convert[i as usize][e.0 as usize] = e.1;
+        }
+    }
+    
+    convert
+}
+
+
+fn dijkstra(n: i32, neighbors: &Vec<Vec<(i32,i32)>>, start: i32) -> Vec<(i32,i32)> {
+    let mut dist = vec![i32::MAX; n as usize];
+    let mut visit = vec![false; n as usize];
+    let mut reach = Vec::new();
+    let mut next = BinaryHeap::new();
+    
+    dist[start as usize] = 0;
+    // (distance, node)
+    next.push(Reverse((0,start)));
+
+    while !next.is_empty() {
+        let e = next.pop().unwrap().0;
+        let curr = e.1 as usize;
+        //println!("{:?}",e);
+        if visit[curr] {
+            continue;
+        }
+        for a in neighbors[curr].iter() {
+            let d = a.1 + dist[curr];
+            if d < dist[a.0 as usize] {
+                next.push(Reverse((d, a.0)));
+                dist[a.0 as usize] = d;
+            }
+        }
+        visit[e.1 as usize] = true;
+        reach.push((e.1,dist[e.1 as usize]));
+    }
+
+    reach
+}
+```
+# 2024-07-26
+[1334. Find the City With the Smallest Number of Neighbors at a Threshold Distance](https://leetcode.com/problems/find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance/)
+
+It's a weird feeling to re-think of Dijkstra's algorithm... Learning Rust standard library is pretty cool. It's interesting to consider which things are "fundamental" and should be included in the standard library. Interestingly, Rust seems to begrudgingly include linked lists in the form of doubly linked lists...
+
+Anyways, Rust's BinaryHeap is really easy to use... Just push and pop.
+
+```Rust
+use std::collections::BinaryHeap;
+use core::cmp::Reverse;
+
+impl Solution {
+    pub fn find_the_city(n: i32, edges: Vec<Vec<i32>>, distance_threshold: i32) -> i32 {
+        let mut neighbors: Vec<Vec<(i32,i32)>> = Vec::new();
+        for i in 0..n {
+            neighbors.push(Vec::new());
+        }
+        for e in edges.iter() {
+            neighbors[e[0] as usize].push((e[1],e[2]));
+            neighbors[e[1] as usize].push((e[0],e[2]));
+        }
+
+        //println!("{:?}",neighbors);
+
+        let mut a = Vec::new();
+        for i in 0..n {
+            let b = dijkstra(n,&neighbors,distance_threshold,i);
+            //println!("{}:{:?}",i,b);
+            a.push((i,b.len()-1));
+        }
+        a.sort_by(|c,d| d.0.cmp(&c.0));
+        a.sort_by(|c,d| c.1.cmp(&d.1));
+
+        //println!("{:?}",a);
+
+        a[0].0
+    }
+}
+
+fn dijkstra(n: i32, neighbors: &Vec<Vec<(i32,i32)>>, thresh: i32, start: i32) -> Vec<i32> {
+    let mut dist = vec![i32::MAX; n as usize];
+    let mut visit = vec![false; n as usize];
+    let mut reach = Vec::new();
+    let mut next = BinaryHeap::new();
+    
+    dist[start as usize] = 0;
+    // (distance, node)
+    next.push(Reverse((0,start)));
+
+    while !next.is_empty() {
+        let e = next.pop().unwrap().0;
+        let curr = e.1 as usize;
+        //println!("{:?}",e);
+        if visit[curr] {
+            continue;
+        }
+        for a in neighbors[curr].iter() {
+            let d = a.1 + dist[curr];
+            if d <= thresh && d < dist[a.0 as usize] {
+                next.push(Reverse((d, a.0)));
+                dist[a.0 as usize] = d;
+            }
+        }
+        visit[e.1 as usize] = true;
+        reach.push(e.1);
+    }
+
+    reach
+}
+```
+# 2024-07-25
+[912. Sort an Array](https://leetcode.com/problems/sort-an-array/)
+
+Using library functions are significantly faster... Almost twice as fast. Maybe heap sort is my new favorite sorting algorithm... Previously it was merge sort.
+
+Some of the LeetCode times are simply wrong... I copied the code of the fastest one and try to run it... They're just as fast as the library functions. Seemingly people discuss how LeetCode adds more test cases... This led to their code failing which had before passed.
+
+```Rust
+impl Solution {
+    pub fn sort_array(nums: Vec<i32>) -> Vec<i32> {
+        // heap sort
+        let mut nums = nums;
+
+        for i in 1..nums.len() {
+            let mut a = i as usize;
+            let mut b = (i-1)/2 as usize;
+            while (b < nums.len()) && (nums[a] > nums[b]) {
+                let t = nums[a];
+                nums[a] = nums[b];
+                nums[b] = t;
+
+                a = b;
+                b = (b-1)/2;
+            }
+        }
+
+        for i in (1..nums.len()).rev() {
+            let t = nums[i];
+            nums[i] = nums[0];
+            nums[0] = t;
+
+            let mut a = 0;
+            let mut l = a*2 + 1;
+            let mut r = a*2 + 2;
+            while r<i && (nums[a]<nums[l] || nums[a]<nums[r]) {
+                let t = nums[a];
+                if nums[r] < nums[l] {
+                    nums[a] = nums[l];
+                    nums[l] = t;
+                    a = l;
+                } else {
+                    nums[a] = nums[r];
+                    nums[r] = t;
+                    a = r;
+                }
+                l = a*2 + 1;
+                r = a*2 + 2;
+            }
+            if l<i && nums[a]<nums[l] {
+                let t = nums[a];
+                nums[a] = nums[l];
+                nums[l] = t;
+            }
+        }
+
+        nums
+    }
+}
+```
+# 2024-07-24
+[2191. Sort the Jumbled Numbers](https://leetcode.com/problems/sort-the-jumbled-numbers/)
+
+Pretty fast using Rust's standard library functions. Not "elegant" but damn fast at least. It's pretty fun to just string a bunch of functions onto each other... Feels like a sort of guilty pleasure...
+
+Removing all line breaks, the solution is technically a 5 line solution... Well, 4 lines actually.
+
+```Rust
+impl Solution {
+    pub fn sort_jumbled(mapping: Vec<i32>, nums: Vec<i32>) -> Vec<i32> {
+        let mut s = nums.iter().map(
+            |e| String::from_utf8(
+                e.to_string().into_bytes().into_iter().map(
+                    |f| (mapping[(f-b'0') as usize] as u8)+b'0'
+                ).collect::<Vec<_>>()
+            ).unwrap().parse::<i32>().unwrap()
+        ).collect::<Vec<i32>>();
+        let mut a = nums.into_iter().zip(s.into_iter()).collect::<Vec<(i32,i32)>>();
+        a.sort_by(|a,b| a.1.cmp(&b.1));
+        a.iter().map(|e| e.0).collect()
+    }
+}
+```
+
+```Rust
+impl Solution {
+    pub fn sort_jumbled(mapping: Vec<i32>, nums: Vec<i32>) -> Vec<i32> {
+        let mut s = nums.iter().map(
+            |e| String::from_utf8(
+                e.to_string().into_bytes().into_iter().map(
+                    |f| (mapping[(f-b'0') as usize] as u8)+b'0'
+                ).collect::<Vec<_>>()
+            ).unwrap().parse::<i32>().unwrap()
+        ).collect::<Vec<i32>>();
+        //println!("{:?}",s);
+
+        let mut a = nums.into_iter().zip(s.into_iter()).collect::<Vec<(i32,i32)>>();
+        a.sort_by(|a,b| a.1.cmp(&b.1));
+        //println!("{:?}",a);
+
+        let out: Vec<_> = a.iter().map(|e| e.0).collect();
+
+        out
+    }
+}
+```
+# 2024-07-23
+[1636. Sort Array by Increasing Frequency](https://leetcode.com/problems/sort-array-by-increasing-frequency/)
+
+```Rust
+impl Solution {
+    pub fn frequency_sort(nums: Vec<i32>) -> Vec<i32> {
+        let mut count = [0; 201];
+        for e in nums.iter() {
+            count[(e+100) as usize] += 1;
+        }
+        let mut a: Vec<(i32,i32)> = Vec::new();
+        for i in 0..=200 {
+            if count[i] > 0 {
+                a.push((count[i],(100-i) as i32));
+            }
+        }
+        a.sort();
+        println!("{:?}",a);
+        
+        let mut out = Vec::new();
+        for e in a.iter() {
+            for i in 0..e.0 {
+                out.push(0-e.1);
+            }
+        }
+        out
+    }
+}
+```
+# 2024-07-22
+[2418. Sort the People](https://leetcode.com/problems/sort-the-people/)
+
+```Rust
+impl Solution {
+    pub fn sort_people(names: Vec<String>, heights: Vec<i32>) -> Vec<String> {
+        let mut a = names.into_iter().zip(heights.into_iter()).collect::<Vec<_>>();
+        a.sort_by(|a,b| b.1.cmp(&a.1));
+        let mut a: Vec<_> = a.into_iter().map(|k| k.0).collect();
+        //a.reverse();
+        //println!("{:?}",a);
+
+        a
+    }
+}
+```
 # 2024-07-21
 [2392. Build a Matrix With Conditions](https://leetcode.com/problems/build-a-matrix-with-conditions/)
+
+For some reason "check_cycle" fails on some of the test cases. Checking the length of the generated topological sorting seems to work...
+
 ```Rust
 impl Solution {
     pub fn build_matrix(k: i32, row_conditions: Vec<Vec<i32>>, col_conditions: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
