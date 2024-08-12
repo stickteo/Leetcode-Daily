@@ -1,3 +1,4 @@
+# 2024-07-31
 [1105. Filling Bookcase Shelves](https://leetcode.com/problems/filling-bookcase-shelves/)
 
 Some ideas... Maybe a greedy problem with two competing criteria. In this case: minimize height and maximize width.
