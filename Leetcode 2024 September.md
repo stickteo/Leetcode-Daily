@@ -1,3 +1,1027 @@
+# 2024-09-25
+[2416. Sum of Prefix Scores of Strings](https://leetcode.com/problems/sum-of-prefix-scores-of-strings/)
+
+"Acceptable"... The C solution required a whopping 700MB of memory and took 500ms to complete. The Rust solution was TLE.
+
+With the constraints, minimum required memory is 1000 strings with 1000 chars. So that's only 1MB. Presumably the memory usage is cumulative? Hard to say...
+
+Anyways, this is a naive implementation of a trie. (As recommended by the hints.)
+
+The Rust version was TLE... Implementing a trie would be difficult in Rust... (Like every other tree structure.)
+
+Technically speaking, hashes are memory efficient... Though it seems to be slow.
+
+Using a BTreeMap for Rust seems to be barely good enough to pass at 1800ms with 600MB of memory.
+
+```C
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+
+struct node {
+    struct node * next[26];
+    int val;
+};
+
+void insert(struct node *n, char *word) {
+    n->val += 1;
+    if (*word==0) {
+        return;
+    }
+    int i = *word-'a';
+    if (n->next[i] == NULL) {
+        struct node *m = calloc(1,sizeof(struct node));
+        n->next[i] = m;
+    }
+    insert(n->next[i],word+1);
+};
+
+int find(struct node *n, char *word) {
+    if (*word==0) {
+        return n->val;
+    }
+    int i = *word-'a';
+    return n->val + find(n->next[i],word+1);
+}
+
+int* sumPrefixScores(char** words, int wordsSize, int* returnSize) {
+    struct node *trie = calloc(1,sizeof(struct node));
+    for (int i=0; i<wordsSize; i++) {
+        insert(trie,words[i]);
+    }
+    int *out = malloc(wordsSize*sizeof(int));
+    for (int i=0; i<wordsSize; i++) {
+        out[i] = find(trie,words[i]);
+        out[i] -= trie->val;
+    }
+    *returnSize = wordsSize;
+    return out;
+}
+```
+
+```Rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn sum_prefix_scores(words: Vec<String>) -> Vec<i32> {
+        let mut map = HashMap::new();
+
+        for w in words.iter() {
+            for i in 1..=w.len() {
+                map.entry(w[0..i].to_string())
+                    .and_modify(|x| *x+=1)
+                    .or_insert(1);
+            }
+        }
+
+        let mut map2: HashMap<String, i32> = HashMap::new();
+        let mut out = Vec::new();
+        for w in words.iter() {
+            match map2.get(w) {
+                None => {
+                    let mut v = 0;
+                    for i in 1..=w.len() {
+                        v += map.get(&w[0..i].to_string()).unwrap();
+                    }
+                    out.push(v);
+                    map2.insert(w.to_string(),v);
+                }
+                Some(v) => {
+                    out.push(*v);
+                }
+            }
+        }
+
+        out
+    }
+}
+```
+
+# 2024-09-24
+[3043. Find the Length of the Longest Common Prefix](https://leetcode.com/problems/find-the-length-of-the-longest-common-prefix/)
+
+Slow, barely passes.
+
+```Rust
+use std::cmp::min;
+
+impl Solution {
+    pub fn longest_common_prefix(arr1: Vec<i32>, arr2: Vec<i32>) -> i32 {
+        let mut arr1 = arr1;
+        let mut arr2 = arr2;
+        arr1.sort(); arr1.dedup(); arr1.reverse();
+        arr2.sort(); arr2.dedup(); arr2.reverse();
+        let mut s1:Vec<String> = arr1.iter().map(|x| x.to_string()).collect();
+        let mut s2:Vec<String> = arr2.iter().map(|x| x.to_string()).collect();
+
+        let mut g = min(s1[0].len(),s2[0].len());
+        while g>0 {
+            let mut a1: Vec<_> = s1.iter().filter(|x| x.len()>=g).map(|x| (x[0..g].to_string(),1)).collect();
+            let mut a2: Vec<_> = s2.iter().filter(|x| x.len()>=g).map(|x| (x[0..g].to_string(),2)).collect();
+            a1.append(&mut a2);
+            a1.sort_unstable();
+            a1.dedup();
+            for i in 0..a1.len()-1 {
+                if a1[i].1 != a1[i+1].1 && a1[i].0 == a1[i+1].0 {
+                    return g as i32;
+                }
+            }
+            g -= 1;
+        }
+        0
+    }
+}
+```
+
+# 2024-09-23
+[2707. Extra Characters in a String](https://leetcode.com/problems/extra-characters-in-a-string/)
+
+Alright solution... Slow but doesn't use too much memory...
+
+```Rust
+impl Solution {
+    pub fn min_extra_char(s: String, dictionary: Vec<String>) -> i32 {
+        let mut xtra = vec![vec![s.len() as i32; s.len()]; s.len()];
+        dfs(&s,&dictionary,&mut xtra,0);
+        //println!("{:1?}",xtra);
+        xtra[0][s.len()-1]
+    }
+}
+
+fn dfs (s: &String, dict: &Vec<String>, xtra: &mut Vec<Vec<i32>>, i: usize) -> i32 {
+    if i >= s.len() {
+        return 0;
+    }
+    if xtra[i][s.len()-1] != s.len() as i32 {
+        return xtra[i][s.len()-1];
+    }
+    let mut cost = Vec::new();
+    for e in dict.iter() {
+        if i+e.len()<=s.len() && *e==s[i..i+e.len()].to_string() {
+            xtra[i][i+e.len()-1] = 0;
+            cost.push(dfs(s,dict,xtra,i+e.len()));
+        }
+    }
+    cost.push(1+dfs(s,dict,xtra,i+1));
+    xtra[i][s.len()-1] = *cost.iter().min().unwrap();
+    xtra[i][s.len()-1]
+}
+```
+
+2024-09-22
+
+TLE
+```Rust
+impl Solution {
+    pub fn find_kth_number(n: i32, k: i32) -> i32 {
+        let mut a = [1 as i64,10,100,1_000,10_000,100_000,1_000_000,
+            10_000_000,100_000_000,1_000_000_000];
+        let mut b = [1 as i64,10,100,1_000,10_000,100_000,1_000_000,
+            10_000_000,100_000_000,1_000_000_000];
+        let n = n as i64;
+        let mut i = 1;
+        let mut m = 0;
+        while i<k {
+            while a[m]<=n && i<k {
+                //print!("{} ",a[m]);
+                m += 1;
+                i += 1;
+            }
+            if i==k && a[m]<=n {
+                break;
+            }
+            m -= 1;
+            for j in m..10 {
+                a[j] += b[j-m];
+            }
+            while a[m]%10==0 || a[m]>n {
+                m -= 1;
+                a[m] += 1;
+            }
+        }
+        //println!("{:?}",a);
+        a[m] as i32
+    }
+}
+```
+
+```Rust
+impl Solution {
+    pub fn find_kth_number(n: i32, k: i32) -> i32 {
+        let mut log = 1;
+        let n = n as usize;
+        let k = k as usize;
+        let mut m = n;
+        while m>9 {
+            log += 1;
+            m /= 10;
+        }
+
+        let mut a = vec![0; log];
+        m = 1;
+        for i in 0..log {
+            a[i] = m;
+            m *= 10;
+        }
+        let mut c = vec![0; log];
+
+        let mut i = 1;
+        m = 0;
+        while i<k {
+            while m<log-1 && i<k {
+                print!("{} ",a[m]);
+                i += 1;
+                m += 1;
+            }
+            while a[m]<n && c[m]<10 && i<k {
+                print!("{} ",a[m]);
+                a[m] += 1;
+                c[m] += 1;
+                i += 1;
+            }
+            if i==k {
+                break;
+            }
+            if a[m]==n {
+                print!("{} ",a[m]);
+                log -= 1;
+                m -= 1;
+                a[m] += 1;
+                c[m] = 0;
+                i += 1;
+            } else if c[m]==10 {
+                print!("{} ",a[m]);
+                c[m] = 0;
+                m -= 1;
+                a[m] += 1;
+                c[m] = 0;
+                i += 1;
+            }
+        }
+
+        a[m] as i32
+    }
+}
+```
+
+# 2024-09-21
+[386. Lexicographical Numbers](https://leetcode.com/problems/lexicographical-numbers/)
+
+Looks slow but gets 100% time.
+
+```Rust
+impl Solution {
+    pub fn lexical_order(n: i32) -> Vec<i32> {
+        let n = n as usize;
+        let mut out = vec![0; n];
+
+        let mut i = 0;
+        let mut a = 1;
+        while i<n {
+            while a<=n {
+                out[i] = a as i32;
+                a *= 10;
+                i += 1;
+            }
+            a /= 10;
+            a += 1;
+            while a%10 == 0 {
+                a /= 10;
+            }
+        }
+
+        out
+    }
+}
+```
+
+# 2024-09-20
+[214. Shortest Palindrome](https://leetcode.com/problems/shortest-palindrome/)
+
+Marked as hard but fairly straightforward. Strange... Others get TLE on this problem but this is pretty much a brute-force approach.
+
+```Rust
+impl Solution {
+    pub fn shortest_palindrome(s: String) -> String {
+        let t: String = s.chars().rev().collect();
+
+        for i in 0..s.len() {
+            let a = &t[i..s.len()];
+            let b = &s[0..s.len()-i];
+            if a==b {
+                return t + &s[s.len()-i..s.len()];
+            }
+        }
+
+        String::new()
+    }
+}
+```
+
+# 2024-09-19
+[241. Different Ways to Add Parentheses](https://leetcode.com/problems/different-ways-to-add-parentheses/)
+
+A bit of a doozy but the implementation is surprisingly "simple". The issue is trying to create unique permutations. On first inspection, it's permutations of which operator to perform first... Thus we can permute a sort of ordering... However, there are certain duplicate orderings...
+
+This is related to https://en.wikipedia.org/wiki/Catalan_number#Applications_in_combinatorics . The article basically describes permutations of parentheses as well as the equivalent case of permutations of binary trees... The question of how to generate the permutation still remains...
+
+Looking at https://en.wikipedia.org/wiki/Matrix_chain_multiplication , I eventually figured it out by splitting the expression into two parts recursively... From there each part has a certain amount of results then we simply iterate through both to generate new results.
+
+This problem would classify as a dynamic programming (DP) problem. We deal with substrings of the expression and store the possible results from that substring. Thus we end up with a 2D array of an array of results. (A 3D array...)
+
+Implementing this in C would be a nightmare... Managing memory would be insane.
+
+DP is not necessary. We do get a tradeoff between time and memory. The DP version times at 0ms consistently. The non-DP version can sometimes get 100% time (0ms) and sometimes 100% (best) memory usage.
+
+```Rust
+impl Solution {
+    pub fn diff_ways_to_compute(expression: String) -> Vec<i32> {
+        let nums: Vec<i32> = expression
+            .split(['+','-','*'])
+            .map(|x| x.parse::<i32>().unwrap())
+            .collect();
+        let ops: Vec<char> = expression
+            .matches(['+','-','*'])
+            .map(|x| x.chars().nth(0).unwrap())
+            .collect();
+        
+        //println!("{:?}",nums);
+        //println!("{:?}",ops);
+
+        let mut sub = vec![vec![Vec::new(); nums.len()]; nums.len()];
+
+        dfs(&nums,&ops,&mut sub, 0,nums.len())
+    }
+}
+
+fn dfs (nums: &Vec<i32>, ops: &Vec<char>, sub: &mut Vec<Vec<Vec<i32>>>, index: usize, len: usize) -> Vec<i32> {
+    let mut v = sub[index][index+len-1].clone();
+    if v.len()>0 {
+        return v;
+    }
+    if len==1 {
+        v.push(nums[index]);
+        sub[index][index+len-1] = v.clone();
+        return v;
+    }
+    for i in 1..len {
+        let l = dfs(nums,ops,sub,index,i);
+        let r = dfs(nums,ops,sub,index+i,len-i);
+        match ops[index+i-1] {
+            '+' => {
+                for e in l.iter() {
+                    for f in r.iter() {
+                        v.push(*e + *f);
+                    }
+                }
+            }
+            '-' => {
+                for e in l.iter() {
+                    for f in r.iter() {
+                        v.push(*e - *f);
+                    }
+                }
+            }
+            '*' => {
+                for e in l.iter() {
+                    for f in r.iter() {
+                        v.push(*e * *f);
+                    }
+                }
+            }
+            _ => ()
+        }
+    }
+	sub[index][index+len-1] = v.clone();
+    return v;
+}
+```
+
+Non-DP version:
+```Rust
+impl Solution {
+    pub fn diff_ways_to_compute(expression: String) -> Vec<i32> {
+        let nums: Vec<i32> = expression
+            .split(['+','-','*'])
+            .map(|x| x.parse::<i32>().unwrap())
+            .collect();
+        let ops: Vec<char> = expression
+            .matches(['+','-','*'])
+            .map(|x| x.chars().nth(0).unwrap())
+            .collect();
+        dfs(&nums,&ops,0,nums.len())
+    }
+}
+
+fn dfs (nums: &Vec<i32>, ops: &Vec<char>, index: usize, len: usize) -> Vec<i32> {
+    let mut v = Vec::new();
+    if len==1 {
+        v.push(nums[index]);
+        return v;
+    }
+    for i in 1..len {
+        let l = dfs(nums,ops,index,i);
+        let r = dfs(nums,ops,index+i,len-i);
+        match ops[index+i-1] {
+            '+' => {
+                for e in l.iter() {
+                    for f in r.iter() {
+                        v.push(*e + *f);
+                    }
+                }
+            }
+            '-' => {
+                for e in l.iter() {
+                    for f in r.iter() {
+                        v.push(*e - *f);
+                    }
+                }
+            }
+            '*' => {
+                for e in l.iter() {
+                    for f in r.iter() {
+                        v.push(*e * *f);
+                    }
+                }
+            }
+            _ => ()
+        }
+    }
+    return v;
+}
+```
+
+# 2024-09-18
+[179. Largest Number](https://leetcode.com/problems/largest-number/)
+
+Found a heuristic to get a solution.
+
+<details>
+<summary>Heuristic Spoiler</summary>
+The heuristic is concatenating the two strings in both ways then simply comparing them. The alternative was to do a sort of search which can be quite painful to implement...
+</details>
+
+My first heuristic was simply to compare the two strings... And the other was duplicating the last character for comparison... It seems this problem can be solved greedily with the right heuristic.
+
+A double input of {0,0} is such a weird edge case.
+
+## Solution
+```Rust
+use std::cmp::Ordering;
+
+impl Solution {
+    pub fn largest_number(nums: Vec<i32>) -> String {
+        let mut s: Vec<_> = nums.iter().map(|x| x.to_string()).collect();
+        s.sort_unstable_by(|a,b| compare(b,a));
+        if s[0] == "0" {
+            return "0".to_string();
+        }
+        s.concat()
+    }
+}
+
+fn compare(a: &String, b: &String) -> Ordering {
+    if (a.len() == b.len()) {
+        return a.cmp(b);
+    }
+    let c = a.clone() + b;
+    let d = b.clone() + a;
+    c.cmp(&d)
+}
+```
+
+## Attempt 1
+```Rust
+use std::cmp::Ordering;
+use std::cmp::Ordering::Less;
+use std::cmp::Ordering::Equal;
+use std::cmp::Ordering::Greater;
+use std::cmp::min;
+
+impl Solution {
+    pub fn largest_number(nums: Vec<i32>) -> String {
+        let mut s: Vec<_> = nums.iter().map(|x| x.to_string()).collect();
+        s.sort_unstable_by(|a,b| compare(b,a));
+        println!("{:?}",s);
+        s.concat()
+    }
+}
+
+fn compare(a: &String, b: &String) -> Ordering {
+    let len = min(a.len(),b.len());
+    let a = a.as_bytes();
+    let b = b.as_bytes();
+    for i in 0..len {
+        match a[i].cmp(&b[i]) {
+            Less => return Less,
+            Equal => continue,
+            Greater => return Greater
+        }
+    }
+    if (a.len() == b.len()) {
+        return Equal;
+    } else if (a.len() < b.len()) {
+        for i in len..b.len() {
+            match a[len-1].cmp(&b[i]) {
+                Less => return Less,
+                Equal => continue,
+                Greater => return Greater
+            }
+        }
+    } else {
+        for i in len..a.len() {
+            match a[i].cmp(&b[len-1]) {
+                Less => return Less,
+                Equal => continue,
+                Greater => return Greater
+            }
+        }
+    }
+    Equal
+}
+```
+
+# 2024-09-17
+[884. Uncommon Words from Two Sentences](https://leetcode.com/problems/uncommon-words-from-two-sentences/)
+
+Just counting the amount of words and keeping words that have a count of one. (A count of one implies the word only appears in one sentence.)
+
+```Rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn uncommon_from_sentences(s1: String, s2: String) -> Vec<String> {
+        let mut words = HashMap::new();
+        s1.split(' ').chain(s2.split(' ')).for_each(|x| {
+            words.entry(x)
+                .and_modify(|y| *y+=1)
+                .or_insert(1);
+            }
+        );
+        words.iter().filter(|(&k,&v)| v==1).map(|x| x.0.to_string()).collect()
+    }
+}
+```
+
+```Rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn uncommon_from_sentences(s1: String, s2: String) -> Vec<String> {
+        let mut words = HashMap::new();
+        s1.split(' ').for_each(|x| {
+            words.entry(x)
+                .and_modify(|y| *y+=1)
+                .or_insert(1);
+            }
+        );
+        s2.split(' ').for_each(|x| {
+            words.entry(x)
+                .and_modify(|y| *y+=1)
+                .or_insert(1);
+            }
+        );
+        //println!("{:?}",words);
+        words.iter().filter(|(&k,&v)| v==1).map(|x| x.0.to_string()).collect()
+    }
+}
+```
+
+# 2024-09-16
+[539. Minimum Time Difference](https://leetcode.com/problems/minimum-time-difference/)
+
+Got a 100% speed and 100% memory run.
+
+```C
+int compare (int16_t *a, int16_t *b) {
+    return *a - *b;
+}
+
+int findMinDifference(char** timePoints, int timePointsSize) {
+    int n = timePointsSize;
+    int16_t *a = malloc(n*sizeof(int16_t));
+    for (int i=0; i<n; i++) {
+        a[i] =
+            (timePoints[i][0]-'0')*10*60 +
+            (timePoints[i][1]-'0')*60 +
+            (timePoints[i][3]-'0')*10 +
+            (timePoints[i][4]-'0');
+    }
+    qsort(a,n,sizeof(int16_t),compare);
+    int b;
+    int min = 1440;
+    for (int i=0; i<n-1; i++) {
+        b = a[i+1] - a[i];
+        if (b<min) {
+            min = b;
+        }
+    }
+    b = a[0]+1440-a[n-1];
+    if (b<min) {
+        min = b;
+    }
+    return min;
+}
+```
+
+# 2024-09-15
+[1371. Find the Longest Substring Containing Vowels in Even Counts](https://leetcode.com/problems/find-the-longest-substring-containing-vowels-in-even-counts/)
+
+Fast but uses a lot of memory.
+
+```C
+int findTheLongestSubstring(char* s) {
+    int n = strlen(s)+1;
+    uint8_t *a = calloc(n,sizeof(uint8_t));
+    char *b = s;
+    uint8_t *c = a;
+    while (*b) {
+        uint8_t d = 0;
+        switch (*b) {
+            case 'a': d = 1; break;
+            case 'e': d = 2; break;
+            case 'i': d = 4; break;
+            case 'o': d = 8; break;
+            case 'u': d = 16; break;
+        }
+        *(c+1) = *c ^ d;
+        b++;
+        c++;
+    }
+    /*
+    for (int i=0; i<n; i++) {
+        printf("%d ",a[i]);
+    }
+    */
+    for (int i=n-1; i>0; i--) {
+        for (int j=0; j<n-i; j++) {
+            if (a[i+j] == a[j]) {
+                return i;
+            }
+        }
+    }
+    return 0;
+}
+```
+
+# 2024-09-14
+[2419. Longest Subarray With Maximum Bitwise AND](https://leetcode.com/problems/longest-subarray-with-maximum-bitwise-and/)
+
+Just finding the max and its longest sequence.
+
+```C
+int longestSubarray(int* nums, int numsSize) {
+    int max = 0;
+    for (int i=0; i<numsSize; i++) {
+        if (max < nums[i]) {
+            max = nums[i];
+        }
+    }
+    int count = 0;
+    int max_count = 0;
+    for (int i=0; i<numsSize; i++) {
+        if (nums[i]==max) {
+            count++;
+            if (max_count < count) {
+                max_count = count;
+            }
+        } else {
+            count = 0;
+        }
+    }
+
+    return max_count;
+}
+```
+
+# 2024-09-13
+[1310. XOR Queries of a Subarray](https://leetcode.com/problems/xor-queries-of-a-subarray/)
+
+```Rust
+impl Solution {
+    pub fn xor_queries(arr: Vec<i32>, queries: Vec<Vec<i32>>) -> Vec<i32> {
+        let mut cumsum = vec![0; arr.len()+1];
+        for (i,e) in arr.iter().enumerate() {
+            cumsum[i+1] = cumsum[i] ^ arr[i];
+        }
+        queries.iter()
+	        .map(|x| cumsum[x[0] as usize] ^ cumsum[x[1] as usize+1])
+	        .collect()
+    }
+}
+```
+
+# 2024-09-12
+[1684. Count the Number of Consistent Strings](https://leetcode.com/problems/count-the-number-of-consistent-strings/)
+
+```C
+int countConsistentStrings(char * allowed, char ** words, int wordsSize){
+    int a = 0;
+    char *c = allowed;
+    while (*c) {
+        a |= (1<<(*c-'a'));
+        c++;
+    }
+    a = ~a;
+    int count = 0;
+    for (int i=0; i<wordsSize; i++) {
+        c = words[i];
+        int b = 0;
+        while (*c) {
+            b |= (1<<(*c-'a'));
+            c++;
+        }
+        if ((a&b) == 0) {
+            count++;
+        }
+    }
+
+    return count;
+}
+```
+
+# 2024-09-11
+[2220. Minimum Bit Flips to Convert Number](https://leetcode.com/problems/minimum-bit-flips-to-convert-number/)
+
+One-liners in both C and Rust.
+
+## C
+```C
+int minBitFlips(int start, int goal) {
+    /*
+    uint32_t a = start ^ goal;
+    int count;
+    for (count=0; a; count++) {
+        a &= a-1;
+    }
+    return count;
+    */
+    return __builtin_popcount(start ^ goal);
+}
+```
+
+## Rust
+```Rust
+impl Solution {
+    pub fn min_bit_flips(start: i32, goal: i32) -> i32 {
+        i32::count_ones(start ^ goal) as i32
+    }
+}
+```
+
+# 2024-09-10
+[2807. Insert Greatest Common Divisors in Linked List](https://leetcode.com/problems/insert-greatest-common-divisors-in-linked-list/)
+
+```C
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     struct ListNode *next;
+ * };
+ */
+
+int gcd(int a, int b) {
+    if (a==0) {
+        return b;
+    } else if (b==0) {
+        return a;
+    }
+
+    int a_k = 0;
+    while (a&1 == 0) {
+        a >>= 1;
+        a_k++;
+    }
+    int b_k = 0;
+    while (b&1 == 0) {
+        b >>= 1;
+        b_k++;
+    }
+    int k = (a_k<b_k) ? a_k : b_k;
+
+    while (1) {
+        if (a>b) {
+            int t = a;
+            a = b;
+            b = t;
+        }
+
+        b -= a;
+
+        if (b==0) {
+            return a<<k;
+        }
+
+        while (b&1 == 0) {
+            b >>= 1;
+        }
+    }
+}
+
+struct ListNode* insertGreatestCommonDivisors(struct ListNode* head){
+    int len = 0;
+    struct ListNode *curr;
+    curr = head;
+
+    while (curr!=NULL) {
+        len++;
+        curr = curr->next;
+    }
+
+    if (len<2) {
+        return head;
+    }
+
+    struct ListNode *arr;
+    arr = malloc((len-1)*sizeof(struct ListNode));
+
+    struct ListNode *prev;
+    prev = head;
+    curr = head->next;
+    int c = 0;
+
+    while (curr != NULL) {
+        int b = gcd(prev->val,curr->val);
+        arr[c].val = b;
+        arr[c].next = curr;
+        prev->next = &arr[c];
+        c++;
+        prev = curr;
+        curr = curr->next;
+    }
+
+    return head;
+}
+```
+
+# 2024-09-09
+[2326. Spiral Matrix IV](https://leetcode.com/problems/spiral-matrix-iv/)
+
+Just a basic state machine. We're dealing with a linked list so it's hard to get optimizations. So we just simulate it.
+
+A major optimization is reducing the amount of malloc calls. We can opt to make a single call to allocate the whole array rather than multiple calls for each row. This results in a speedup of at least 10ms with the total time taken 950ms. (Comparing the fastest run times.)
+
+```C
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     struct ListNode *next;
+ * };
+ */
+/**
+ * Return an array of arrays of size *returnSize.
+ * The sizes of the arrays are returned as *returnColumnSizes array.
+ * Note: Both returned array and *columnSizes array must be malloced, assume caller calls free().
+ */
+int** spiralMatrix(int m, int n, struct ListNode* head, int* returnSize, int** returnColumnSizes) {
+    int **arr;
+    arr = malloc(m*sizeof(int *));
+    int *t;
+    t = malloc(m*n*sizeof(int));
+    for (int i=0; i<m; i++) {
+        //arr[i] = malloc(n*sizeof(int));
+        arr[i] = t;
+        t += n;
+        for (int j=0; j<n; j++){
+            arr[i][j] = -1;
+        }
+    }
+    int *cs;
+    cs = malloc(m*sizeof(int));
+    for (int i=0; i<m; i++) {
+        cs[i] = n;
+    }
+
+    *returnSize = m;
+    *returnColumnSizes = cs;
+
+    int w = n;
+    int h = m-1;
+    int dir = 0;
+    int x = 0;
+    int y = 0;
+    int c = 0;
+
+    struct ListNode *curr;
+    curr = head;
+
+    while (curr!=NULL) {
+        //printf("%d %d, ", y, x);
+        if (dir==0) {
+            arr[y][x] = curr->val;
+            x++;
+            c++;
+            if (c>=w) {
+                dir = 1;
+                c = 0;
+                w--;
+                y++;
+                x--;
+            }
+        } else if (dir==1) {
+            arr[y][x] = curr->val;
+            y++;
+            c++;
+            if (c>=h) {
+                dir = 2;
+                c = 0;
+                h--;
+                x--;
+                y--;
+            }
+        } else if (dir==2) {
+            arr[y][x] = curr->val;
+            x--;
+            c++;
+            if (c>=w) {
+                dir = 3;
+                c = 0;
+                w--;
+                y--;
+                x++;
+            }
+        } else if (dir==3) {
+            arr[y][x] = curr->val;
+            y--;
+            c++;
+            if (c>=h) {
+                dir = 0;
+                c = 0;
+                h--;
+                x++;
+                y++;
+            }
+        }
+        curr = curr->next;
+    }
+
+    return arr;
+}
+```
+
+# 2024-09-08
+[725. Split Linked List in Parts](https://leetcode.com/problems/split-linked-list-in-parts/)
+
+```C
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     struct ListNode *next;
+ * };
+ */
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+struct ListNode** splitListToParts(struct ListNode* head, int k, int* returnSize) {
+    struct ListNode *curr;
+    curr = head;
+    int len = 0;
+    while (curr!=NULL) {
+        len++;
+        curr = curr->next;
+    }
+
+    struct ListNode **arr;
+    arr = calloc(k,sizeof(struct ListNode*));
+    int a = len/k+1;
+    int b = len%k;
+    struct ListNode *prev;
+    curr = head;
+    prev = NULL;
+    int c = 0;
+    for (int i=0; i<b; i++) {
+        arr[c] = curr;
+        for (int j=0; j<a; j++) {
+            prev = curr;
+            curr = curr->next;
+        }
+        c++;
+        prev->next = NULL;
+    }
+    a = len/k;
+    b = k - (len%k);
+    for (int i=0; i<b; i++) {
+        if (a<1) {
+            arr[c] = NULL;
+        } else {
+            arr[c] = curr;
+            for (int j=0; j<a; j++) {
+                prev = curr;
+                curr = curr->next;
+            }
+            prev->next = NULL;
+        }
+        c++;
+    }
+
+    *returnSize = k;
+    return arr;
+}
+```
+
 # 2024-09-07
 [1367. Linked List in Binary Tree](https://leetcode.com/problems/linked-list-in-binary-tree/)
 
