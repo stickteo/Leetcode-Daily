@@ -1,3 +1,104 @@
+# 2024-09-26
+[729. My Calendar I](https://leetcode.com/problems/my-calendar-i/)
+
+I was able to get a 100% time run using a VecDeque. (A VecDeque was slightly faster than a Vec.)
+
+The implementation is "straightforward". We simply store the pairs directly into a vector. Since the times come in pairs, a time at an even index will always be a start time while a time at an odd index will always be an end time. Furthermore, the pairs will always remain together since if we insert a pair that has intersecting time, the times will conflict.
+
+For the specifics, Rust's "binary_search" allows us to search for a certain value within the vector. If a value exists, it returns an "Ok" and the index of that value. Else if the value doesn't exist, it returns an "Err" and indicates where we should insert the searched value instead. This is really convenient.
+
+Thus we search for the new start time. (The new event to be inserted.)
+
+In the case of "Ok", the index could either be a start time (even) or an end time (odd). If it's even, this indicates the event is conflicting with the new event. (Both have the same start time.) If it's odd, we know the new start time is equal to an end time.
+
+```
+end time (index) <= start time < start time(index+1)
+```
+
+This is okay according to the rules/constraints. Then we check if the new end time is less than or equal to the next start time (index+1) or if we're at the end of the vector. If either is true, we insert the times.
+
+In the case of "Err", no value is equal to our new start time. If the index is even, this indicates our new start time is after an end time.
+
+```
+end time (index-1) < new start time < start time (index)
+```
+
+From there we check if we're at the end of the vector or if the new end time is less than or equal to the next start time (index). If so, we insert the new times and return true.
+
+If the index is odd, this indicates the new start time is between a start time and an end time. Thus we do not insert and return false.
+
+```
+start time (index-1) < new start time < end time (index)
+```
+
+This was not my first approach... I tried to solve the problem using a BTreeMap... But it gets rather complicated. I really doubt you can solve this problem using a HashMap...
+
+There's also the classic method of using a "bitmap" to indicate whether a time is used or not. This would be similar to a calendar of times and marking which times are used up. The upside is that it's (potentially) really fast. The downside is that it uses up a lot of space. (It's slow if you have to mark out a lot of time if the time span is really large.)
+
+```Rust
+use std::collections::VecDeque;
+
+struct MyCalendar {
+    events: VecDeque<i32>
+}
+
+
+/** 
+ * `&self` means the method takes an immutable reference.
+ * If you need a mutable reference, change it to `&mut self` instead.
+ */
+impl MyCalendar {
+
+    fn new() -> Self {
+        Self {
+            events: VecDeque::new()
+        }
+    }
+    
+    fn book(&mut self, start: i32, end: i32) -> bool {
+        match self.events.binary_search(&start) {
+            Ok(index) => {
+                //println!("ok{}",index);
+                if index&1==0 {
+                    return false;
+                } else {
+                    if index+1>=self.events.len() || end<=self.events[index+1] {
+                        self.events.insert(index+1,end);
+                        self.events.insert(index+1,start);
+                        //println!("{:?}",self.events);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            }
+            Err(index) => {
+                //println!("err{}",index);
+                if index&1==0 {
+                    if index>=self.events.len() || end<=self.events[index] {
+                        self.events.insert(index,end);
+                        self.events.insert(index,start);
+                        //println!("{:?}",self.events);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+        false
+    }
+}
+
+/**
+ * Your MyCalendar object will be instantiated and called as such:
+ * let obj = MyCalendar::new();
+ * let ret_1: bool = obj.book(start, end);
+ */
+```
+
 # 2024-09-25
 [2416. Sum of Prefix Scores of Strings](https://leetcode.com/problems/sum-of-prefix-scores-of-strings/)
 
