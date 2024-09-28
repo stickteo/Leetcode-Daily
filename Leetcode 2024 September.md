@@ -1,3 +1,131 @@
+# 2024-09-28
+[641. Design Circular Deque](https://leetcode.com/problems/design-circular-deque/)
+
+A fairly standard implementation of a deque using a circular buffer. With most implementations, the devil are in the details...
+
+A deque (a double ended queue) allows insertion in the front and back. A "single ended queue" would be a "typical" "vector". A vector only allows insertion at the back, while inserting in the front would be expensive.
+
+Data is simply an array. We initialize with the exact size we need.
+
+Front and back are indexes. For this implementation, we set the back to size-1. The front and back will always point to data when we call the "get" functions. An alternative design choice would be having the front and back point to empty spaces...
+
+Len keeps track of the current "length" of the deque. Which is the current size. We need the length to indicate whether the deque is full or empty; We can simply check against zero or size. In theory, we can omit the use of length but we will lose one slot for the data; We would need an empty slot in data otherwise an empty deque is indistinguishable from a full deque... To allow the right size, we would need to allocate one more slot anyways... But that empty slot will not be used for anything useful... Therefore, the better design choice is just to have len.
+
+An alternative implementation for a deque seems to be a doubly-linked list... But linked lists are generally horrible data structures (in my honest opinion). I don't really want to give a diatribe about how bad linked lists are... In short though, linked lists are slow, error-prone, and actually complex to implement properly.
+
+```C
+typedef struct {
+    int *data;
+    int size;
+    int front;
+    int back;
+    int len;
+} MyCircularDeque;
+
+MyCircularDeque* myCircularDequeCreate(int k) {
+    MyCircularDeque *deque = calloc(1,sizeof(MyCircularDeque));
+    deque->data = malloc(k*sizeof(int));
+    deque->size = k;
+    deque->front = 0;
+    deque->back = k-1;
+    deque->len = 0;
+    return deque;
+}
+
+bool myCircularDequeInsertFront(MyCircularDeque* obj, int value) {
+    if (obj->len<obj->size) {
+        obj->front = (obj->front+obj->size-1)%obj->size;
+        obj->data[obj->front] = value;
+        obj->len += 1;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool myCircularDequeInsertLast(MyCircularDeque* obj, int value) {
+    if (obj->len<obj->size) {
+        obj->back = (obj->back+1)%obj->size;
+        obj->data[obj->back] = value;
+        obj->len += 1;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool myCircularDequeDeleteFront(MyCircularDeque* obj) {
+    if (obj->len>0) {
+        obj->front = (obj->front+1)%obj->size;
+        obj->len -= 1;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool myCircularDequeDeleteLast(MyCircularDeque* obj) {
+    if (obj->len>0) {
+        obj->back = (obj->back+obj->size-1)%obj->size;
+        obj->len -= 1;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int myCircularDequeGetFront(MyCircularDeque* obj) {
+    if (obj->len>0) {
+        return obj->data[obj->front];
+    } else {
+        return -1;
+    }
+}
+
+int myCircularDequeGetRear(MyCircularDeque* obj) {
+    if (obj->len>0) {
+        return obj->data[obj->back];
+    } else {
+        return -1;
+    }
+}
+
+bool myCircularDequeIsEmpty(MyCircularDeque* obj) {
+    return obj->len == 0;
+}
+
+bool myCircularDequeIsFull(MyCircularDeque* obj) {
+    return obj->len == obj->size;
+}
+
+void myCircularDequeFree(MyCircularDeque* obj) {
+    free(obj->data);
+    free(obj);
+}
+
+/**
+ * Your MyCircularDeque struct will be instantiated and called as such:
+ * MyCircularDeque* obj = myCircularDequeCreate(k);
+ * bool param_1 = myCircularDequeInsertFront(obj, value);
+ 
+ * bool param_2 = myCircularDequeInsertLast(obj, value);
+ 
+ * bool param_3 = myCircularDequeDeleteFront(obj);
+ 
+ * bool param_4 = myCircularDequeDeleteLast(obj);
+ 
+ * int param_5 = myCircularDequeGetFront(obj);
+ 
+ * int param_6 = myCircularDequeGetRear(obj);
+ 
+ * bool param_7 = myCircularDequeIsEmpty(obj);
+ 
+ * bool param_8 = myCircularDequeIsFull(obj);
+ 
+ * myCircularDequeFree(obj);
+*/
+```
+
 # 2024-09-26
 [729. My Calendar I](https://leetcode.com/problems/my-calendar-i/)
 
