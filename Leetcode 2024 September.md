@@ -1,3 +1,110 @@
+# 2024-09-29
+[432. All O'one Data Structure](https://leetcode.com/problems/all-oone-data-structure/)
+
+I'm not going to implement this in C... It would be too painful to store and sort strings...
+
+For O(1) time complexity, this immediately implies using hashes. Technically speaking, "inc" and "dec" may be O(log(n)) though... It's not the worst performing code though it's not consistently the fastest... (There's a lot of variance in runtime though. For 6 runs, the runtime ranged from 22ms to 35ms. The best solution seem to take around 19ms.) That being said, it works and passes.
+
+At first, I thought about using a BTreeMap. (Note: a BTreeMap can store a key-value pair while also sorting everything by the key value.) However, it is sorted by the keys but we want to sort by value instead.
+
+I brainstormed for a bit... The only data structure that is O(1) would be a HashMap...
+
+We somehow want O(1) lookups yet also have sorted values. A HashMap is equivalent to a mathematical "function". A function indicates key values should be unique and thus only corresponds to one value. However, I want to keep the values sorted yet somehow lookup the corresponding key... (Basically doing a "reverse" lookup based on the value.) Well, seemingly I can't do everything I want with just one HashMap...
+
+Therefore, I ended up using a HashMap and a BTreeSet.
+
+Note: a HashMap also stores a key-value pair but it doesn't sort by key value. In theory, (single) lookups should be faster than a BTreeMap. There are certain tradeoffs we have to make if we want a certain property/"feature"... In this case: HashMaps have faster (single) lookups while BTreeMaps have sorted keys (faster lookups for similar keys).
+
+Note 2: BTreeSet is just a BTreeMap but without values.
+
+So to keep a sorted list of values, I used a BTreeSet. Storing just the values won't allow me to lookup the keys... Thus, I just store both the value and key! Well, this means I need to know both the value and key...
+
+Note: We store the value and key as a tuple. In this case, we want the value to be the first value so the BTreeSet will sort using the value first. If both values are equal, then the keys/strings will be compared next...
+
+For get_max_key() and get_min_key(), it's fairly simple. BTreeSet can get those keys with first() and last().
+
+However for inc() and dec(), we're only given the key yet not given the value. (Spoiler: we do know the value...) To modify the BTreeSet, we need to know both the value and key to modify them... Well, why not just look it up with the HashMap? So that's where the HashMap comes into the picture. We lookup the key in the HashMap to get a value... Then we feed that value-key pair to lookup in the BTreeSet! To modify the BTreeSet, we simply remove the old value-key pair and insert the new value-key pair.
+
+Done!
+
+PS: The "fastest" 19ms solution is quite complex... Out of 6 runs (I copy and pasted their solution) the range of runtimes I got were 27ms to 35ms. Technically slower than my solution. However, it uses more memory at around 18MB in comparison to my 15MB. Perhaps a lucky run? Otherwise seemingly the same runtime. O(1) can be debatable... Not sure if any solution can actually be O(1) (in the technical sense) since we need sort things in some way... For what it's worth, my solution is simple and fast. (Indeed, some of the other solutions I see also use HashMap and BTreeSet... At least for Rust submissions.)
+
+PSS: From reading the comments, a HashMap lookup can point to a node within a doubly linked list of values. I believe this was the more/fast complex solution. For a Rust implementation... We can "cheat" by using a vector of indices... With next, previous, and value. The HashMap can also map keys to an index...
+
+PSSS: dec() and inc() might be O(n) rather than O(1)... Supposedly this can be solved with another HashMap for looking up values to a node/key... It's a complex implementation but doable...
+
+```Rust
+use std::collections::HashMap;
+use std::collections::BTreeSet;
+
+struct AllOne {
+    data: HashMap<String,i32>,
+    count: BTreeSet<(i32,String)>
+}
+
+
+/** 
+ * `&self` means the method takes an immutable reference.
+ * If you need a mutable reference, change it to `&mut self` instead.
+ */
+impl AllOne {
+
+    fn new() -> Self {
+        Self {
+            data: HashMap::new(),
+            count: BTreeSet::new()
+        }
+    }
+    
+    fn inc(&mut self, key: String) {
+        self.data.entry(key.clone())
+            .and_modify(|x| *x+=1)
+            .or_insert(1);
+        
+        let val = *self.data.get(&key).unwrap();
+        self.count.remove(&(val-1,key.clone()));
+        self.count.insert((val,key.clone()));
+    }
+    
+    fn dec(&mut self, key: String) {
+        self.data.entry(key.clone())
+            .and_modify(|x| *x-=1);
+        
+        let val = *self.data.get(&key).unwrap();
+        if val == 0 {
+            self.count.remove(&(val+1,key.clone()));
+        } else {
+            self.count.remove(&(val+1,key.clone()));
+            self.count.insert((val,key.clone()));
+        }
+        
+    }
+    
+    fn get_max_key(&self) -> String {
+        match self.count.last() {
+            None => "".to_string(),
+            Some(x) => x.1.clone()
+        }
+    }
+    
+    fn get_min_key(&self) -> String {
+        match self.count.first() {
+            None => "".to_string(),
+            Some(x) => x.1.clone()
+        }
+    }
+}
+
+/**
+ * Your AllOne object will be instantiated and called as such:
+ * let obj = AllOne::new();
+ * obj.inc(key);
+ * obj.dec(key);
+ * let ret_3: String = obj.get_max_key();
+ * let ret_4: String = obj.get_min_key();
+ */
+```
+
 # 2024-09-28
 [641. Design Circular Deque](https://leetcode.com/problems/design-circular-deque/)
 
