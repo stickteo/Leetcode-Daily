@@ -1,3 +1,73 @@
+# 2024-09-30
+[1381. Design a Stack With Increment Operation](https://leetcode.com/problems/design-a-stack-with-increment-operation/)
+
+Fairly basic and standard.
+
+An interesting thing to note is that we can do a single malloc() call as well as a single free() call. Perhaps this can give a small speed boost.
+
+For some details... Size is just max size. While Top points to the top empty slot. Top is also the current size.
+
+```C
+typedef struct {
+    int *data;
+    int size;
+    int top;
+} CustomStack;
+
+
+CustomStack* customStackCreate(int maxSize) {
+    //CustomStack *cs = malloc(sizeof(CustomStack));
+    //cs->data = malloc(maxSize*sizeof(int));
+    CustomStack *cs = malloc(sizeof(CustomStack)+maxSize*sizeof(int));
+    cs->data = &cs[1];
+    cs->size = maxSize;
+    cs->top = 0;
+    return cs;
+}
+
+void customStackPush(CustomStack* obj, int x) {
+    if (obj->top < obj->size) {
+        obj->data[obj->top] = x;
+        obj->top += 1;
+    }
+}
+
+int customStackPop(CustomStack* obj) {
+    if (obj->top > 0) {
+        obj->top -= 1;
+        return obj->data[obj->top];
+    } else {
+        return -1;
+    }
+}
+
+void customStackIncrement(CustomStack* obj, int k, int val) {
+    if (k>obj->top) {
+        k = obj->top;
+    }
+    for (int i=0; i<k; i++) {
+        obj->data[i] += val;
+    }
+}
+
+void customStackFree(CustomStack* obj) {
+    //free(obj->data);
+    free(obj);
+}
+
+/**
+ * Your CustomStack struct will be instantiated and called as such:
+ * CustomStack* obj = customStackCreate(maxSize);
+ * customStackPush(obj, x);
+ 
+ * int param_2 = customStackPop(obj);
+ 
+ * customStackIncrement(obj, k, val);
+ 
+ * customStackFree(obj);
+*/
+```
+
 # 2024-09-29
 [432. All O'one Data Structure](https://leetcode.com/problems/all-oone-data-structure/)
 
