@@ -1,3 +1,100 @@
+# 2024-10-02
+[1331. Rank Transform of an Array](https://leetcode.com/problems/rank-transform-of-an-array/)
+
+A fairly "typical" solution. (A typical pattern of LeetCode problems.)
+
+We first create a "tuple" by combining the array value with its index.
+
+```C
+for (int i=0; i<arrSize; i++) {
+	bar[i] = (((uint64_t)arr[i])<<32)+i;
+}
+```
+
+From there we sort it. The lowest value with its index will be in the first position...  Thus the lowest rank. We only increase the rank if the previous value is different from our current value. Since "bar" includes the index, we can use this index to modify "arr" with the rank.
+
+Doing it the "correct" way means we want to create another array for the output... To save on memory, we simply modify our input array to use as an output instead. (We also don't use free() since it takes more time...)
+
+I also included code for making the tuple as a struct. This would be the more "proper" way and more idiomatic and should be more understandable. (This seems to perform the same, but the code is easier to understand instead... No weird bit shifts and strange looking code...)
+
+## Tuple as a struct (more idiomatic)
+
+```C
+struct tuple {
+    int val;
+    int index;
+};
+
+int compare(struct tuple *a, struct tuple *b) {
+    return a->val - b->val;
+}
+
+int* arrayRankTransform(int* arr, int arrSize, int* returnSize) {
+    if (arrSize==0) {
+        *returnSize = 0;
+        return 0;
+    }
+    struct tuple *bar = malloc(arrSize*sizeof(struct tuple));
+    for (int i=0; i<arrSize; i++) {
+        bar[i].val = arr[i];
+        bar[i].index = i;
+    }
+    qsort(bar,arrSize,sizeof(struct tuple),compare);
+    int r = 1;
+    arr[bar[0].index] = 1;
+    for (int i=1; i<arrSize; i++) {
+        if (bar[i].val != bar[i-1].val) {
+            r++;
+        }
+        arr[bar[i].index] = r;
+    }
+    *returnSize = arrSize;
+    return arr;
+}
+```
+
+## Combining Value and Index into int64_t
+
+```C
+int compare(int64_t *a, int64_t *b) {
+    if (*a<*b) {
+        return -1;
+    } else if (*a==*b) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+int* arrayRankTransform(int* arr, int arrSize, int* returnSize) {
+    if (arrSize==0) {
+        *returnSize = 0;
+        return 0;
+    }
+    int64_t *bar = malloc(arrSize*sizeof(int64_t));
+    for (int i=0; i<arrSize; i++) {
+        bar[i] = (((uint64_t)arr[i])<<32)+i;
+        //printf("%ld ",bar[i]);
+    }
+    qsort(bar,arrSize,sizeof(int64_t),compare);
+    /*
+    for (int i=0; i<arrSize; i++) {
+        printf("%ld,%ld ",bar[i]>>32,bar[i]&((1L<<32)-1));
+    }
+    */
+    int r = 1;
+    arr[bar[0]&((1L<<32)-1)] = 1;
+    for (int i=1; i<arrSize; i++) {
+        if ((bar[i]>>32) != (bar[i-1]>>32)) {
+            r++;
+        }
+        arr[bar[i]&((1L<<32)-1)] = r;
+    }
+    *returnSize = arrSize;
+    return arr;
+}
+```
+
 # 2024-10-01
 [1497. Check If Array Pairs Are Divisible by k](https://leetcode.com/problems/check-if-array-pairs-are-divisible-by-k/)
 
