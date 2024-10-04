@@ -1,3 +1,97 @@
+# 2024-10-04
+[2491. Divide Players Into Teams of Equal Skill](https://leetcode.com/problems/divide-players-into-teams-of-equal-skill/)
+
+We simply sort then pair the lower half with the upper half.
+
+We can prove this via contradiction... We want to pair the current minimum and maximum values. Suppose the ideal sum was not the minimum paired with the maximum. This implies the minimum must be paired with a value "v" that's not the maximum. Thus there exists a value "w" such that "w>minimum" and pairs with the maximum to have the same sum...
+
+To summarize:
+- minimum < v < maximum
+- minimum < w < maximum
+- minimum + v = maximum + w
+
+Since w > minimum:
+- minimum + v = minimum + maximum
+Therefore:
+- v = maximum
+
+Our assumptions are only true when v is equal to maximum... However, we assume v is not the maximum. This is a contradiction. Therefore, the minimum must pair up with the maximum. Then via induction, we remove that pair for each step... Then each step we pair up the new minimum and maximum.
+
+```C
+int compare (int *a, int *b) {
+    return *a - *b;
+}
+
+long long dividePlayers(int* skill, int skillSize) {
+    qsort(skill,skillSize,sizeof(int),compare);
+    int s = skill[0]+skill[skillSize-1];
+    int i = 0;
+    while (i<skillSize/2 && skill[i]+skill[skillSize-1-i]==s) {
+        skill[i] = skill[i]*skill[skillSize-1-i];
+        i++;
+    }
+    if (i<skillSize/2) {
+        return -1;
+    }
+    long long sum = 0;
+    i = 0;
+    while (i<skillSize/2) {
+        sum += skill[i];
+        i++;
+    }
+    return sum;
+}
+```
+
+# 2024-10-03
+[1590. Make Sum Divisible by P](https://leetcode.com/problems/make-sum-divisible-by-p/)
+
+Array "a" would be the cumulative sum starting from the start while array "b" would be the cumulative sum starting from the end.
+
+In this case we want the cumulative sum to be the modulus of p.
+
+First we calculate the cumulative sum from the start. Then we can calculate the cumulative sum from the end by using the total sum.
+
+Next, we start a search from the lowest value... Each search is of size n... And we do n searches... This leads to a run time of O(n^2).
+
+"i" represents the subarray size/gap... "j" represents the start of the gap. We increase the gap until we find a solution. Since we start with a small gap, we are guaranteed we will return the smallest possible gap.
+
+Not sure if this problem can be solved with binary search or solved faster...
+
+Reframing the problem, it would be searching for subarray sums that have the same remainder as the total sum... It would still be O(n^2) though and we have to search through everything for the minimum...
+
+```C
+int minSubarray(int* nums, int numsSize, int p) {
+    nums[0] %= p;
+    for (int i=1; i<numsSize; i++) {
+        nums[i] = (nums[i]+nums[i-1])%p;
+    }
+    if (nums[numsSize-1]==0) {
+        return 0;
+    }
+    int *a = nums;
+    int *b = malloc(numsSize*sizeof(int));
+    b[0] = a[numsSize-1];
+    for (int i=1; i<numsSize; i++) {
+        b[i] = (b[0]+p-a[i-1])%p;
+    }
+    for (int i=2; i<=numsSize; i++) {
+        if (b[i-1]==0) {
+            return i-1;
+        }
+        for (int j=0; j<numsSize-i; j++) {
+            if (a[j] == (p-b[j+i])) {
+                return i-1;
+            }
+        }
+        if (a[numsSize-i] == 0) {
+            return i-1;
+        }
+    }
+    return -1;
+}
+```
+
 # 2024-10-02
 [1331. Rank Transform of an Array](https://leetcode.com/problems/rank-transform-of-an-array/)
 
