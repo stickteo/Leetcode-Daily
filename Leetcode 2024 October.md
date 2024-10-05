@@ -1,3 +1,59 @@
+# 2024-10-05
+[567. Permutation in String](https://leetcode.com/problems/permutation-in-string/)
+
+Straight forward, not trying anything too complicated here.
+
+Since we're checking permutations, we only need to count the number of characters in s1.
+
+Then we check each substring in s2 that has the same length as s1. We simply compare the counts for both. Then for each step, we "move" the substring "window" by decrementing the previous start and incrementing the new end. Of course, we simply compare for each step until we find a permutation... Otherwise we return false if no permutation exists.
+
+This would be the quickest but seemingly common solution... A naive approach would be generating all substrings to compare... However that naive approach would seemingly be hard to implement...
+
+```C
+bool compare(int *c1, int *c2) {
+    int i=0;
+    while (i<26 && c1[i]==c2[i]) {
+        i++;
+    }
+    return i>=26;
+}
+
+bool checkInclusion(char* s1, char* s2) {
+    int c1[26] = {0};
+    int c2[26] = {0};
+
+    int l1 = 0;
+    char *a1;
+    a1 = s1;
+    while (*a1) {
+        c1[*a1-'a']++;
+        l1++;
+        a1++;
+    }
+    
+    int l2 = strlen(s2);
+    if (l2<l1) {
+        return false;
+    }
+    
+    for (int i=0; i<l1; i++) {
+        c2[s2[i]-'a']++;
+    }
+    if (compare(c1,c2)) {
+        return true;
+    }
+    for (int i=l1; i<l2; i++) {
+        c2[s2[i]-'a']++;
+        c2[s2[i-l1]-'a']--;
+        if (compare(c1,c2)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+```
+
 # 2024-10-04
 [2491. Divide Players Into Teams of Equal Skill](https://leetcode.com/problems/divide-players-into-teams-of-equal-skill/)
 
