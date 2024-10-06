@@ -1,3 +1,70 @@
+# 2024-10-06
+[1813. Sentence Similarity III](https://leetcode.com/problems/sentence-similarity-iii/)
+
+Just "logically" bruteforcing the solution until all tests pass.
+
+If this doesn't work, my other approach is tokenizing the string and then comparing each token. The logic would be fundamentally the same... Just check if the start tokens are the same and if the end tokens are the same... From there, check if all tokens from either string is used up or not...
+
+With this bruteforce approach, I just rearrange the logic statements until the tests pass...
+
+With logical approaches, sometimes the logic may not be "tight" enough and there will be some corner case that will break it... Though it's always fun to chase that solution rather than give up... In this case, I was able to come to a solution...
+
+(Most of the logic deals with how spaces are supposed to be handled...)
+
+In theory, this solution should be very quick... Only iterating through both strings max 3 times... (an strlen call, iterate from the start, iterate from the end...) Memory usage is also minimal since we're not allocating any memory at all... Only a using few iterators...
+
+PS: The hints pretty tell the same approach and the commentors ~~complain about~~ discussing the edge cases...
+## Pure Logic (Naive bruteforce)
+```C
+bool areSentencesSimilar(char* sentence1, char* sentence2) {
+    int len1 = strlen(sentence1);
+    int len2 = strlen(sentence2);
+
+    char *a = sentence1;
+    char *b = sentence2;
+    while (*a!=0 && *b!=0 && *a==*b) {
+        a++;
+        b++;
+    }
+    if ((*a==0 && *b==' ') || (*b==0 && *a==' ') || (*a==0 && *b==0)) {
+        return true;
+    }
+    /*
+    if (*a==' ' || *b==' ') {
+        return false;
+    }
+    */
+    /*
+    if ((a>sentence1 && a[-1]!=' ') || (b>sentence2 && b[-1]!=' ')) {
+        return false;
+    }
+    */
+    
+    char *end1 = &sentence1[len1-1];
+    char *end2 = &sentence2[len2-1];
+    char *c = end1;
+    char *d = end2;
+    while (c>=sentence1 && d>=sentence2 && *c==*d) {
+        c--;
+        d--;
+    }
+    if ((c<sentence1 && *d==' ') || (d<sentence2 && *c==' ') || (c<sentence1 && d<sentence2)) {
+        return true;
+    }
+    if ((c<end1 && c[1]!=' ') || (d<end2 && d[1]!=' ')) {
+        return false;
+    }
+    if ((a>sentence1 && a[-1]!=' ') || (b>sentence2 && b[-1]!=' ')) {
+        return false;
+    }
+    if (c<a || d<b) {
+        return true;
+    }
+
+    return false;
+}
+```
+
 # 2024-10-05
 [567. Permutation in String](https://leetcode.com/problems/permutation-in-string/)
 
