@@ -1,3 +1,52 @@
+# 2024-10-07
+[2696. Minimum String Length After Removing Substrings](https://leetcode.com/problems/minimum-string-length-after-removing-substrings/)
+
+Some basic logic. Was able to get 100% time but memory use could be better. (Best memory use is 9.1MB while the best possible is 8.6MB... This means using an excess of 500kB? This seems totally random...)
+
+Anyways, array "a" acts as a stack... I can push 'A' or 'C' onto it... Then if I see 'B' or 'D' I can form pairs. Otherwise the stack would reset itself... We would want our stack to be the maximum possible length just in case we push a lot of 'A's or 'C's... Otherwise we can get the string length and allocate what we need... However, we can do everything in a single pass if we have a stack...
+
+```C
+int minLength(char * s){
+    char a[100];
+    int i=0;
+    int j=0;
+    int c=0;
+    while (s[j]) {
+        switch (s[j]) {
+            case 'A':
+                a[i] = 'A';
+                i++;
+                break;
+            case 'B':
+                if (i>0 && a[i-1]=='A') {
+                    c+=2;
+                    i--;
+                } else {
+                    i=0;
+                }
+                break;
+            case 'C':
+                a[i] = 'C';
+                i++;
+                break;
+            case 'D':
+                if (i>0 && a[i-1]=='C') {
+                    c+=2;
+                    i--;
+                } else {
+                    i=0;
+                }
+                break;
+            default:
+                i=0;
+                break;
+        }
+        j++;
+    }
+    return j-c;
+}
+```
+
 # 2024-10-06
 [1813. Sentence Similarity III](https://leetcode.com/problems/sentence-similarity-iii/)
 
