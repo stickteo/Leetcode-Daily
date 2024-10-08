@@ -1,3 +1,72 @@
+# 2024-10-08
+[1963. Minimum Number of Swaps to Make the String Balanced](https://leetcode.com/problems/minimum-number-of-swaps-to-make-the-string-balanced/)
+
+Not the fastest but the central idea works. We want to match open brackets to closed brackets by simply counting them. From the left (from the start of the string), our count increases if we see open brackets... Otherwise it decreases if we see closed brackets. The opposite is done from the right side (from the end of the string).
+
+If our count goes negative, we found a bracket that should be swapped. Thus doing this from the left and right, we should get an optimal swap. It's harder to prove if this is the most optimal... However, they should be necessary swaps.
+
+There's are multiple minimum solutions... This algorithm will provide one of those solutions.
+
+The term "balanced" seems very misleading... It would imply the string should be a sort of palindrome... However that's not necessary... "Matched" would be a better term... https://stackoverflow.com/questions/26047985/balanced-parentheses
+
+```C
+int minSwaps(char* s) {
+    int len = strlen(s);
+    int a=0;
+    int ac=0;
+    int b=len-1;
+    int bc=0;
+    int swap=0;
+
+    while (a<b) {
+        while (ac>=0 && a<b) {
+            switch (s[a]) {
+                case '[':
+                    ac++;
+                    break;
+                case ']':
+                    ac--;
+                    break;
+            }
+            a++;
+        }
+        if (ac==0 && a>=b) {
+            break;
+        }
+        if (ac<0) {
+            a--;
+            ac=0;
+        }
+        while (bc>=0 && a<b) {
+            switch (s[b]) {
+                case '[':
+                    bc--;
+                    break;
+                case ']':
+                    bc++;
+                    break;
+            }
+            b--;
+        }
+        if (bc==0 && a>=b) {
+            break;
+        }
+        if (bc<0) {
+            b++;
+            bc=0;
+        }
+        s[a] = '[';
+        s[b] = ']';
+        swap++;
+        //a++;
+        //b--;
+    }
+
+    //printf("%s\n",s);
+    return swap;
+}
+```
+
 # 2024-10-07
 [2696. Minimum String Length After Removing Substrings](https://leetcode.com/problems/minimum-string-length-after-removing-substrings/)
 
