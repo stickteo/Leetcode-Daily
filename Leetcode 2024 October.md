@@ -1,3 +1,31 @@
+# 2024-10-09
+[921. Minimum Add to Make Parentheses Valid](https://leetcode.com/problems/minimum-add-to-make-parentheses-valid/)
+
+Fairly basic logic, though not just counting open and closed parentheses and calculating the difference... A good basic test case would be ")("... The correct answer should be 2 and not 0.
+
+```C
+int minAddToMakeValid(char* s) {
+    int a=0;
+    int c=0;
+    while (*s) {
+        switch (*s) {
+            case '(':
+                a++;
+                break;
+            case ')':
+                if (a>0) {
+                    a--;
+                } else {
+                    c++;
+                }
+                break;
+        }
+        s++;
+    }
+    return c+a;
+}
+```
+
 # 2024-10-08
 [1963. Minimum Number of Swaps to Make the String Balanced](https://leetcode.com/problems/minimum-number-of-swaps-to-make-the-string-balanced/)
 
