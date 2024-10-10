@@ -1,3 +1,127 @@
+# 2024-10-10
+[962. Maximum Width Ramp](https://leetcode.com/problems/maximum-width-ramp/)
+
+Slow solution. My loop logic needs to be better. I'm strangely bad at these sort of questions.
+
+Anyways, the first simplest solution got TLE. The worst test case are a series of descending numbers... (I.e. 9,8,7,6,5,4,3,2,1.)
+
+This algorithm is greedy. There are two things we need to optimize: the width and minimum/maximum value.
+
+We first create an array of minimums and maximums.
+
+A minimum number is when it's the smallest number with the smallest index. Suppose at index N with number A, if there's an index M with number B such that M < N and B <= A. This means number B at index M will always give a better width.
+
+Similarly, maximum numbers are the largest numbers with the largest index.
+
+For example:
+```
+nums = [9,8,1,0,1,9,4,0,4,1]
+mins = [9,8,1,0            ]
+maxs = [          9,4,    1]
+```
+
+Once the index is over 3, the best minimum is 0. Similarly, once the index is under 5, the best maximum is 9.
+
+After getting the max and min arrays, we "zig-zag" between the maximums and minimums to find the best possible width. "Zig-zagging" is possible since we have sorted values; If we know A < B and C < A, we don't have to check that C < B. (We have to establish an "ordering" or create that associative property that allows us to compare a few values.)
+
+Perhaps a visualization may help, minimums are at the left while maximums are at top.
+```
+  1 4 9
+9 > > =
+8   > <
+1 = <
+0 <
+```
+
+Minimums need to be less than or equal to the maximums to be valid. With the zig-zag approach, we don't have to compare every number. Ideally, we want to minimize the amount of comparisons we have to do.
+
+```C
+int maxWidthRamp(int* nums, int numsSize) {
+    int *min = malloc(numsSize*sizeof(int));
+    int *max = malloc(numsSize*sizeof(int));
+
+    int minl;
+    int maxl;
+
+    min[0] = 0;
+    minl = 1;
+    for (int i=1; i<numsSize; i++) {
+        if (nums[i]<nums[min[minl-1]]) {
+            min[minl] = i;
+            minl++;
+        }
+    }
+
+    max[0] = numsSize-1;
+    maxl = 1;
+    for (int i=numsSize-2; i>=0; i--) {
+        if (nums[i]>nums[max[maxl-1]]) {
+            max[maxl] = i;
+            maxl++;
+        }
+    }
+
+    /*
+    for (int i=0; i<minl; i++) {
+        printf("%d ",nums[min[i]]);
+    }
+    printf("\n");
+
+    for (int i=0; i<maxl; i++) {
+        printf("%d ",nums[max[i]]);
+    }
+    printf("\n");
+    */
+
+    /*
+    for (int i=0; i<minl; i++) {
+        for (int j=0; j<maxl; j++) {
+            if (max[j]-min[i] <= w) {
+                break;
+            }
+            if (nums[min[i]] <= nums[max[j]]) {
+                w = max[j]-min[i];
+                break;
+            }
+        }
+    }
+    */
+    int j=0;
+    while (nums[0]>nums[max[j]]) {
+        j++;
+    }
+    int w=max[j];
+    for (int i=1; i<minl; i++) {
+        while (j>0 && nums[max[j]]>nums[min[i]]) {
+            j--;
+        }
+        if (nums[max[j]]<nums[min[i]]) {
+            j++;
+        }
+        //printf("%d %d\n",nums[min[i]],nums[max[j]]);
+        if (max[j]-min[i]>w) {
+            //printf("* %d %d\n",nums[min[i]],nums[max[j]]);
+            w = max[j]-min[i];
+        }
+    }
+
+    return w;
+}
+```
+
+```C
+int maxWidthRamp(int* nums, int numsSize) {
+    for (int w=numsSize-1; w>0; w--) {
+        for (int i=0; i<numsSize-w; i++) {
+            if (nums[i]<=nums[i+w]) {
+                return w;
+            }
+        }
+    }
+    return 0;
+}
+```
+
 # 2024-10-09
 [921. Minimum Add to Make Parentheses Valid](https://leetcode.com/problems/minimum-add-to-make-parentheses-valid/)
 
