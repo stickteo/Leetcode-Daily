@@ -1,3 +1,223 @@
+# 2024-10-12
+[2406. Divide Intervals Into Minimum Number of Groups](https://leetcode.com/problems/divide-intervals-into-minimum-number-of-groups/)
+
+First we sort. Then we greedily merge an interval with the earliest possible end time. This is done by storing the end times for each group.
+
+This is quite slow in comparison to the other results... Using a VecDeque at least halves the amount of time... This indicates inserting and removal takes a lot of time.
+
+Looking at the hints is quite a weird experience... Somehow the minimum number of groups is equivalent to maximum number of overlapping intervals...
+
+The Greedy Heap approach is eerily similar to the bruteforce approach though it's actually different. We basically pop out end times that are less than our new start time... Then we push our new end time. Finally we check if the length is the max or not. We iterate until we process all of the intervals. Using a heap means our run time is O(n logn). (We have O(logn) operations and iterate over n elements.)
+
+In some sense the "puzzle pieces" are:
+- sorting the intervals
+- comparing the start times to stored end times
+- reframing the problem as max overlapping intervals "at some point"
+
+## Greedy Heap (Looked at hints)
+```Rust
+use std::collections::BinaryHeap;
+impl Solution {
+    pub fn min_groups(intervals: Vec<Vec<i32>>) -> i32 {
+        let mut ints = intervals;
+        ints.sort_unstable();
+        let mut heap = BinaryHeap::new();
+        let mut max = 0;
+        for e in ints.iter() {
+            while match heap.peek() {
+                None => false,
+                Some(a) => -e[0] < *a
+            } {
+                heap.pop();
+            }
+            heap.push(-e[1]);
+            max = max.max(heap.len());
+        }
+        max as i32
+    }
+}
+```
+
+## Greedy Bruteforce (No comments)
+```Rust
+use std::collections::VecDeque;
+impl Solution {
+    pub fn min_groups(intervals: Vec<Vec<i32>>) -> i32 {
+        let mut ints = intervals;
+        ints.sort_unstable();
+        let mut groups = VecDeque::new();
+        for e in ints.iter() {
+            let i = groups.partition_point(|x| x<&e[0]);
+            if i!=0 {
+                groups.remove(i-1);
+            }
+            let j = groups.partition_point(|x| x<&e[1]);
+            groups.insert(j,e[1]);
+        }
+        //print!("{:?}",groups);
+        groups.len() as i32
+    }
+}
+```
+
+## Greedy
+```Rust
+impl Solution {
+    pub fn min_groups(intervals: Vec<Vec<i32>>) -> i32 {
+        let mut ints = intervals;
+        ints.sort_unstable();
+        let mut groups = Vec::new();
+        for e in ints.iter() {
+            /*
+            let i = match groups.binary_search(&e[0]) {
+                Ok(a) => a,
+                Err(a) => a
+            };
+            */
+            let i = groups.partition_point(|x| x<&e[0]);
+            /*
+            if i==0 {
+                let j = match groups.binary_search(&e[1]) {
+                    Ok(a) => a+1,
+                    Err(a) => a
+                };
+                groups.insert(j,e[1]);
+            } else {
+                groups.remove(i-1);
+                let j = match groups.binary_search(&e[1]) {
+                    Ok(a) => a+1,
+                    Err(a) => a
+                };
+                groups.insert(j,e[1]);
+            }
+            */
+            if i!=0 {
+                groups.remove(i-1);
+            }
+            /*
+            let j = match groups.binary_search(&e[1]) {
+                Ok(a) => a,
+                Err(a) => a
+            };
+            */
+            let j = groups.partition_point(|x| x<&e[1]);
+            groups.insert(j,e[1]);
+        }
+        //print!("{:?}",groups);
+        groups.len() as i32
+    }
+}
+```
+
+## Greedy TLE
+```C
+int compare (int **a, int **b) {
+    if (*a[0] == *b[0]) {
+        return *a[1] - *b[1];
+    } else {
+        return *a[0] - *b[0];
+    }
+}
+
+int minGroups(int** intervals, int intervalsSize, int* intervalsColSize) {
+    qsort(intervals,intervalsSize,sizeof(int **),compare);
+
+    /*
+    for (int i=0; i<intervalsSize; i++) {
+        printf("%d,%d ",intervals[i][0],intervals[i][1]);
+    }
+    printf("\n");
+    */
+
+    int groups=1;
+    for (int i=1; i<intervalsSize; i++) {
+        int j=0;
+        while (j<groups) {
+            if (intervals[i][0]>intervals[j][1]) {
+                intervals[j][1] = intervals[i][1];
+                break;
+            }
+            j++;
+        }
+        if (j>=groups) {
+            intervals[groups][0] = intervals[i][0];
+            intervals[groups][1] = intervals[i][1];
+            groups++;
+        }
+    }
+    
+    /*
+    for (int i=0; i<groups; i++) {
+        printf("%d,%d ",intervals[i][0],intervals[i][1]);
+    }
+    */
+
+    return groups;
+}
+```
+
+# 2024-10-11
+[1942. The Number of the Smallest Unoccupied Chair](https://leetcode.com/problems/the-number-of-the-smallest-unoccupied-chair/)
+
+Slow and uses a lot of memory!
+
+```Rust
+use std::collections::BinaryHeap;
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn smallest_chair(times: Vec<Vec<i32>>, target_friend: i32) -> i32 {
+        let mut heap = BinaryHeap::new();
+        for (i,e) in times.iter().enumerate() {
+	        if times[target_friend as usize][0] < e[0] {
+                continue;
+            }
+            // negative times
+            // - early times will be the max
+            //   and taken out first in max heap
+            // negative index to indicate arrival
+            // - leaving is prioritized with a positive index
+            heap.push((-e[0] as i32, 0-(i as i32+1)));
+            heap.push((-e[1] as i32, i as i32+1));
+        }
+
+        let mut chairs = Vec::new();
+        let mut map = HashMap::new();
+        while !heap.is_empty() {
+            let (t,f) = heap.pop().unwrap();
+            //print!("{} ",f);
+            if f<0 {
+                // arrive
+                let mut c = chairs.len();
+                for (i,e) in chairs.iter().enumerate() {
+                    if *e == 0 {
+                        c = i;
+                        break;
+                    }
+                }
+                if f == target_friend+1 {
+                    return c as i32;
+                }
+                if c == chairs.len() {
+                    chairs.push(0-f);
+                    map.insert(0-f,c);
+                } else {
+                    chairs[c] = 0-f;
+                    map.insert(0-f,c);
+                }
+                //print!("{},{} ",f,c);
+            } else {
+                // leave
+                chairs[map[&f]] = 0;
+                //print!("{},{} ",f,map[&f]);
+            }
+        }
+
+        map[&(target_friend+1)] as i32
+    }
+}
+```
+
 # 2024-10-10
 [962. Maximum Width Ramp](https://leetcode.com/problems/maximum-width-ramp/)
 
