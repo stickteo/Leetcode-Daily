@@ -1,3 +1,114 @@
+# 2024-10-13
+[632. Smallest Range Covering Elements from K Lists](https://leetcode.com/problems/smallest-range-covering-elements-from-k-lists/)
+
+Since each list is already sorted, we always know the min and max of each list. (Otherwise we will have to sort it first.)
+
+The main problem to solve is trying to construct the range. There was some brainstorming trying to figure it out... Mainly thinking about minimums and maximums and drawing out an algorithm on paper...
+
+<details>
+<summary>Spoiler!</summary>
+The key insight is that we can construct the range from the maximums from each list.
+
+We maintain the range so we can always calculate max-min. (The range is the same length as the amount of lists.) We attach the index so we can lookup which list to pop from next.
+
+We update our best if the current range is smaller. Then, we pop the max value from our range; This will also give us the index of the list to get the next value from. Thus, we insert that value into our range. From there, we just repeat until one of our lists is empty.
+
+There are a variety of ways to maintain our range... For this problem, we're going to use a BTreeSet. Inserts (insert()), min (first()), and max (last()) should all take at most O(logn).
+
+In comparison, using a Vector means inserts will take O(n) time.
+
+With the constraints, we have K lists (3500) with each list having at most 50 values. The worst case would be 3500 * 50 = 175,000 iterations. Using a Vector would be roughly on the order of 3500*3500*50 = 612,500,000 operations (mostly writes)... Whereas using a BTreeSet means log2(3500)*3500*50 = 12*3500*50 = 2,100,000 operations (inserts/writes)... This means a BTreeSet needs to be around 300 times slower per operation before a Vector would be advantageous...
+
+I'm just not sure which data structure would be as fast... LinkedLists could be a simple alternative... Reads are inefficient for LinkedLists but inserts are much faster than Vectors...
+
+P.S. The discussion does indicate a sort of sliding window with all elements sorted. It was one of my initial ideas... It could actually work... I just need to maintain a ~~Boolean array~~ count of whether my window has that list or not... That might be faster...
+</details>
+
+## "Typical" Solution
+```Rust
+use std::collections::BTreeSet;
+
+impl Solution {
+    pub fn smallest_range(nums: Vec<Vec<i32>>) -> Vec<i32> {
+        // edge cases
+        if nums.len() == 1 {
+            let a = nums[0][0];
+            return vec![a,a];
+        }
+
+        // initialize
+        let mut nums = nums;
+        let mut set = BTreeSet::new();
+        for (i,e) in nums.iter_mut().enumerate() {
+            match e.pop() {
+                None => {
+                    println!("error!");
+                }
+                Some(a) => {
+                    set.insert((a,i));
+                }
+            }
+        }
+        //println!("{:?}",set);
+        let mut best = (set.first().unwrap().0,set.last().unwrap().0);
+
+        // main algorithm
+        while let Some(a) = set.pop_last() {
+            let (val,list) = a;
+            let curr = (set.first().unwrap().0,val);
+            if best.1-best.0 >= curr.1-curr.0 {
+                best = curr;
+            }
+            match nums[list].pop() {
+                None => break,
+                Some(b) => {
+                    set.insert((b,list));
+                }
+            }
+        }
+        vec![best.0,best.1]
+    }
+}
+```
+
+## Idea 1
+```Rust
+use std::collections::BinaryHeap;
+
+impl Solution {
+    pub fn smallest_range(nums: Vec<Vec<i32>>) -> Vec<i32> {
+        let mut lens: Vec<usize> = nums.iter().map(|x| x.len()).collect();
+        println!("{:?}",lens);
+        let mut heap = BinaryHeap::new();
+        for (list,e) in nums.iter().enumerate() {
+            for val in e.iter() {
+                heap.push((val,list));
+            }
+        }
+        println!("{:?}",heap);
+        let mut max = 0;
+        while match heap.peek() {
+            None => false,
+            Some(&(val,list)) => {
+                print!("{},{} ",val,list);
+                if lens[list] > 1 {
+                    lens[list] -= 1;
+                    true
+                } else {
+                    max = *val;
+                    false
+                }
+            }
+        } {
+            heap.pop();
+        }
+        println!("{:?}",lens);
+
+        vec![1,max]
+    }
+}
+```
+
 # 2024-10-12
 [2406. Divide Intervals Into Minimum Number of Groups](https://leetcode.com/problems/divide-intervals-into-minimum-number-of-groups/)
 
