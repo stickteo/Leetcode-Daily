@@ -1,3 +1,39 @@
+# 2024-10-14
+[2530. Maximal Score After Applying K Operations](https://leetcode.com/problems/maximal-score-after-applying-k-operations/)
+
+A fairly straight forward solution... Though maybe not the fastest. A simple implementation though.
+
+We want a sorted array so we can always get the largest number to add to our sum. However, we also need to update that value and somehow keep our array sorted.
+
+A simple way is to use a BinaryHeap where we can just pop the max value. Update that value. Then push that value back in. Finally, just iterate for k steps.
+
+To get the ceil() function, we can just add one less than the divisor before dividing.
+
+In terms of speed, it's slower than most of the submissions... The runtimes range from 30ms to 36ms for 6 runs, with an average of around 34ms. The best runtime is 29ms. So this solution would be around 10% slower than the fastest... 33ms beats 66.67%... There's seems to be 3 main bins Leetcode separates the solutions into...
+
+Not much of a spoiler but looking at the hints basically tells you to use a heap.
+
+```Rust
+use std::collections::BinaryHeap;
+impl Solution {
+    pub fn max_kelements(nums: Vec<i32>, k: i32) -> i64 {
+        let mut k = k;
+        let mut heap = BinaryHeap::new();
+        for e in nums {
+            heap.push(e);
+        }
+        let mut sum = 0 as i64;
+        while k>0 {
+            let v = heap.pop().unwrap();
+            sum += v as i64;
+            heap.push((v+2)/3);
+            k-=1;
+        }
+        sum
+    }
+}
+```
+
 # 2024-10-13
 [632. Smallest Range Covering Elements from K Lists](https://leetcode.com/problems/smallest-range-covering-elements-from-k-lists/)
 
