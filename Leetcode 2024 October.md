@@ -1,3 +1,90 @@
+# 2024-10-15
+[2938. Separate Black and White Balls](https://leetcode.com/problems/separate-black-and-white-balls/)
+
+You can see how my solutions iteratively get better...
+
+In Rust, when you collect(), you create a new vector and that significantly takes more time. (More memory needs to be allocated.)
+
+Starting at the beginning, we first notice optimal swaps must be swapping 1s to the right with 0s. Swapping 1s and 1s will not be optimal (nothing changes).
+
+Then we notice the rightmost '1' must be at the last index. The second rightmost '1' would be at the second last index... And so forth...
+
+For example:
+```
+0 1 2 3 4
+---------
+1 0 1 0 0
+1---->1
+    1-->1
+0 0 0 1 1
+```
+
+So for "10100" to change into "00011". The starting indexes of 1s are: (0,2) and the ending indexes are: (3,4). So our number of swaps are (3-0)+(4-2) = 5.
+
+This forms the basis for our bruteforce algorithm... It's not very smart... (Trying to sort the 0s out from the 1s...)
+
+The faster solution avoids including 0s. But it's still not very good. However, I was getting close by calculating the string's length minus the amount of 1s... (s.len()-a.len()).
+
+So... The s.len() is the amount of 0s and 1s... Then we're subtracting the amount of 1s from it... So in the best solution, we simply calculate the amount of 0s. Naming it C, C represents the position of the leftmost '1' in the final string. Looking back at the example "10100", C = 3. From there we can easily generate the ending indexes by simply adding 1 to C for each iteration. Done. Easy.
+
+## Best
+```Rust
+impl Solution {
+    pub fn minimum_steps(s: String) -> i64 {
+        let mut c = s.chars().filter(|x| *x=='0').count();
+        let mut sum = 0 as i64;
+        s.chars().enumerate().filter(|x| x.1=='1')
+        .for_each(|x| {
+            sum += (c-x.0) as i64;
+            c += 1;
+        });
+        sum
+    }
+}
+```
+
+## Faster
+```Rust
+impl Solution {
+    pub fn minimum_steps(s: String) -> i64 {
+        let a: Vec<i32> = s.chars()
+        .enumerate().filter(|x| x.1=='1')
+        .map(|x| x.0 as i32)
+        .collect();
+        //println!("{:?}",a);
+        let b = s.len()-a.len();
+        a.iter().enumerate()
+        .map(|x| (x.0+b-*x.1 as usize) as i64)
+        .sum()
+    }
+}
+```
+
+## Slow Bruteforce
+```Rust
+impl Solution {
+    pub fn minimum_steps(s: String) -> i64 {
+        let mut a: Vec<i32> = s.chars()
+        .enumerate().map(|x|
+            if x.1 == '0' {
+                -1
+            } else {
+                x.0 as i32
+            }
+        ).collect();
+        a.sort_unstable();
+        //println!("{:?}",a);
+        a.iter().enumerate().map(|x|
+            if *x.1 == -1 {
+                0
+            } else {
+                x.0 as i64 - *x.1 as i64
+            }
+        ).sum()
+    }
+}
+```
+
 # 2024-10-14
 [2530. Maximal Score After Applying K Operations](https://leetcode.com/problems/maximal-score-after-applying-k-operations/)
 
