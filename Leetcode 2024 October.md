@@ -1,3 +1,149 @@
+# 2024-10-16
+[1405. Longest Happy String](https://leetcode.com/problems/longest-happy-string/)
+
+The code looks long but it's pattern matching and a lot of repetition.
+
+For this problem, we're tasked with generating a "longest happy string".
+
+Let's go through this solution first. We first use the character with the largest amount. For example with a=1, b=1, c=7, we have the most amount of 'c's. We use this first by pushing it into our initial vector. Then we set it as the "previous" character used.
+
+Then we iterate matching against the previous character. Then we compare which of the remaining amounts are larger... Using the larger one, and decrementing its count.
+
+For this example, we get a vector with a pattern: "cacbc". The loop ends when we see the two remaining amounts are both 0.
+
+From there, we iterate on our pattern to generate the final string. We simply add another character if we have remaining characters to use. Thus "cacbc" becomes "ccaccbcc" with one 'c' left unused. Suppose c=5, we would get "ccaccbc" instead.
+
+## Solution
+```Rust
+impl Solution {
+    pub fn longest_diverse_string(a: i32, b: i32, c: i32) -> String {
+        let mut nums = vec![a,b,c];
+        let mut prev = if a<b {
+            if b<c {2} else {1}
+        } else {
+            if a<c {2} else {0}
+        };
+
+        let mut v = vec![prev];
+        nums[prev] -= 1;
+
+        loop { match prev {
+            0 => if nums[1]<nums[2] {
+                v.push(2); nums[2] -= 1; prev = 2;
+            } else {
+                if nums[1] == 0 { break; }
+                v.push(1); nums[1] -= 1; prev = 1;
+            }
+            1 => if nums[0]<nums[2] {
+                v.push(2); nums[2] -= 1; prev = 2;
+            } else {
+                if nums[0] == 0 { break; }
+                v.push(0); nums[0] -= 1; prev = 0;
+            }
+            2 => if nums[0]<nums[1] {
+                v.push(1); nums[1] -= 1; prev = 1;
+            } else {
+                if nums[0] == 0 { break; }
+                v.push(0); nums[0] -= 1; prev = 0;
+            }
+            _ => {}
+        }}
+        //println!("{:?}",v);
+
+        let mut s = String::new();
+        for e in v.iter() {
+            if nums[*e] > 0 {
+                match e {
+                    0 => s.push_str("aa"),
+                    1 => s.push_str("bb"),
+                    2 => s.push_str("cc"),
+                    _ => {}
+                }
+                nums[*e]-=1;
+            } else {
+                match e {
+                    0 => s.push('a'),
+                    1 => s.push('b'),
+                    2 => s.push('c'),
+                    _ => {}
+                }
+            }
+        }
+        s
+    }
+}
+```
+
+## Draft
+```Rust
+impl Solution {
+    pub fn longest_diverse_string(a: i32, b: i32, c: i32) -> String {
+        let mut nums = vec![a,b,c];
+        let mut prev = if a<b {
+            if b<c {2} else {1}
+        } else {
+            if a<c {2} else {0}
+        };
+
+        let mut v = vec![(prev,1)];
+        nums[prev] -= 1;
+
+        loop {
+            match prev {
+                0 => if nums[1]<nums[2] {
+                    v.push((2,1));
+                    nums[2] -= 1;
+                    prev = 2;
+                } else {
+                    if nums[1] == 0 {
+                        break;
+                    }
+                    v.push((1,1));
+                    nums[1] -= 1;
+                    prev = 1;
+                }
+                1 => if nums[0]<nums[2] {
+                    v.push((2,1));
+                    nums[2] -= 1;
+                    prev = 2;
+                } else {
+                    if nums[0] == 0 {
+                        break;
+                    }
+                    v.push((0,1));
+                    nums[0] -= 1;
+                    prev = 0;
+                }
+                2 => if nums[0]<nums[1] {
+                    v.push((1,1));
+                    nums[1] -= 1;
+                    prev = 1;
+                } else {
+                    if nums[0] == 0 {
+                        break;
+                    }
+                    v.push((0,1));
+                    nums[0] -= 1;
+                    prev = 0;
+                }
+                _ => {}
+            }
+        }
+        println!("{:?}",v);
+        
+        for e in v.iter_mut() {
+            if nums[e.0] > 0 {
+                e.1 += 1;
+                nums[e.0]-=1;
+            }
+        }
+        println!("{:?}",v);
+
+        String::new()
+    }
+}
+```
+
 # 2024-10-15
 [2938. Separate Black and White Balls](https://leetcode.com/problems/separate-black-and-white-balls/)
 
