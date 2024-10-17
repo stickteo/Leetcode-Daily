@@ -1,3 +1,38 @@
+# 2024-10-17
+[670. Maximum Swap](https://leetcode.com/problems/maximum-swap/)
+
+Starting at each digit position, we want to make sure we have the best possible value. A good test case would be "9937". Just checking the first two digits would not be enough.
+
+For each position, we want to get the max of the remaining digits. If the digit is the max, we go to the next position. Else, we find the max of the remaining digits and swap the max with our current position.
+
+Since we're calculating the max at each position, we might as well sort.
+
+For the code, we first create a string from the number. Duplicate that string and sort it in descending order. Then we compare each digit in both strings. If we reach the end, we just return our input number. Else, we find the same digit by starting from the end of our unsorted string. Finally we perform the swap and covert the string back into a number.
+
+```Rust
+impl Solution {
+    pub fn maximum_swap(num: i32) -> i32 {
+        let mut s = num.to_string().into_bytes();
+        let mut t = s.clone();
+        t.sort_unstable_by(|a,b| b.cmp(a));
+        let mut i = 0;
+        while i<s.len() && s[i]==t[i] {
+            i += 1;
+        }
+        if i==s.len() {
+            return num;
+        }
+        let mut j = s.len()-1;
+        while t[i]!=s[j] {
+            j -= 1;
+        }
+        s[j] = s[i];
+        s[i] = t[i];
+        String::from_utf8(s).unwrap().parse().unwrap()
+    }
+}
+```
+
 # 2024-10-16
 [1405. Longest Happy String](https://leetcode.com/problems/longest-happy-string/)
 
