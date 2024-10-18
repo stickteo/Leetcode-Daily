@@ -1,3 +1,48 @@
+# 2024-10-18
+[2044. Count Number of Maximum Bitwise-OR Subsets](https://leetcode.com/problems/count-number-of-maximum-bitwise-or-subsets/)
+
+A fast solution but uses a lot of memory. We basically calculate the value for every subset and then count the subsets which have the maximum value.
+
+To calculate the max, we simply calculate the cumulative OR of every number.
+
+To calculate each subset, we use our previous calculations to calculate our next subset value. In essence, we iterate through 0 to 2^nums.len(). (The total amount of subsets is 2 to the power of the amount of numbers we have; Each number is either included in the subset or not included.) Thus each index in binary represents whether each number is included in the subset or not.
+
+Using the following example input: (3,1,2)
+```
+           3 1 2
+0 = 000 =>       => 0
+1 = 001 =>     2 => 2
+2 = 010 =>   1   => 1
+3 = 011 =>   1|2 => 3
+4 = 100 => 3     => 3
+5 = 101 => 3|  2 => 3
+6 = 110 => 3|1   => 3
+7 = 111 => 3|1|2 => 3
+```
+
+We can see that for indexes 4 to 7, we simply OR 3 with the results from 0 to 3.
+
+In some sense this can be called "dynamic programming" where we use the previous calculations to calculate new values.
+
+## Bruteforce
+```Rust
+impl Solution {
+    pub fn count_max_or_subsets(nums: Vec<i32>) -> i32 {
+        let mut subs = vec![0; 1<<nums.len()];
+        for i in 0..nums.len() {
+            subs[1<<i] = nums[i];
+            for j in 0..(1<<i) {
+                subs[(1<<i)+j] = nums[i]|subs[j];
+            }
+        }
+        //println!("{:?}",subs);
+        let mut max = 0;
+        nums.iter().for_each(|x| max|=x);
+        subs.iter().filter(|x| **x==max).count() as i32
+    }
+}
+```
+
 # 2024-10-17
 [670. Maximum Swap](https://leetcode.com/problems/maximum-swap/)
 
