@@ -1,3 +1,38 @@
+# 2024-10-19
+[1545. Find Kth Bit in Nth Binary String](https://leetcode.com/problems/find-kth-bit-in-nth-binary-string/)
+
+The following is a mathematical solution. Based on the histogram of solutions, the solutions seem to be the mathematical solution.
+
+The bruteforce approach is to have an array of digits and emulate it by manually duplicating digits. Straightforward to describe... But maybe a pain to implement a fast and memory efficient solution.
+
+The mathematical approach is based on a recursive definition:
+```
+f(0) = 0
+f(1) = 0
+f(n) = f(2^ceil(log2(n)) - n) XOR 1
+```
+
+The ceiling of log2(n) represents our highest bit. So 2 to the power of the ceiling of the binary logarithm of n is simply "rounding" n to the next power of 2... For example, the next power of 2 of 3 is 4; 18 to 32. However, powers of 2 equal to itself.
+
+We subtract n to represent the "reverse" operation. While the "invert" operation is XOR 1.
+
+Using the mathematical approach, we do not need to consider the value of n and we only use k instead. The process should take log(k) iterations and thus very fast to compute.
+
+```Rust
+impl Solution {
+    pub fn find_kth_bit(n: i32, k: i32) -> char {
+        let mut k = k;
+        let mut b = false;
+        while k>1 {
+            //print!("{} ",k);
+            b ^= true;
+            k = (1<<(32-(k-1).leading_zeros()))-k;
+        }
+        if b {'1'} else {'0'}
+    }
+}
+```
+
 # 2024-10-18
 [2044. Count Number of Maximum Bitwise-OR Subsets](https://leetcode.com/problems/count-number-of-maximum-bitwise-or-subsets/)
 
