@@ -1,3 +1,74 @@
+# 2024-10-20
+[1106. Parsing A Boolean Expression](https://leetcode.com/problems/parsing-a-boolean-expression/)
+
+Keeping it simple. Just plain brute force parsing with no short circuiting. Runs fast but uses memory since we're still managing the stack.
+
+After doing a few of these parsing problems, I'm starting to get a hang of managing the stack and using state variables. We would want to match on the current state while pushing the previous state onto the stack.
+
+Looking at the comments, a person mentions using a "top-down parser". Supposedly it's "incredibly easy to write".
+
+Another person mentions parsing it in reverse, but I'm not sure how that would make it easier... Perhaps the stack will only need to store values and not the operators.
+
+```Rust
+impl Solution {
+    pub fn parse_bool_expr(expression: String) -> bool {
+        let mut i = 0;
+        let exp = expression;
+        let mut stack = vec!();
+        let mut val = false;
+        let mut op = b'|';
+        while i<exp.len() {
+            match exp.as_bytes()[i] {
+                b'&' => {
+                    stack.push((op,val));
+                    op = b'&';
+                    val = true;
+                }
+                b'|' => {
+                    stack.push((op,val));
+                    op = b'|';
+                    val = false;
+                }
+                b'!' => {
+                    stack.push((op,val));
+                    op = b'!';
+                    val = true;
+                }
+                b'f' => {
+                    match op {
+                        b'&' => val &= false,
+                        b'|' => val |= false,
+                        b'!' => val = true,
+                        _ => {}
+                    }
+                }
+                b't' => {
+                    match op {
+                        b'&' => val &= true,
+                        b'|' => val |= true,
+                        b'!' => val = false,
+                        _ => {}
+                    }
+                }
+                b')' => {
+                    let val2 = val;
+                    (op,val) = stack.pop().unwrap();
+                    match op {
+                        b'&' => val &= val2,
+                        b'|' => val |= val2,
+                        b'!' => val = !val2,
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        val
+    }
+}
+```
+
 # 2024-10-19
 [1545. Find Kth Bit in Nth Binary String](https://leetcode.com/problems/find-kth-bit-in-nth-binary-string/)
 
