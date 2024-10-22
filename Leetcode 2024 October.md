@@ -1,3 +1,125 @@
+# 2024-10-22
+[2583. Kth Largest Sum in a Binary Tree](https://leetcode.com/problems/kth-largest-sum-in-a-binary-tree/)
+
+Back to coding in C to deal with trees. Rust is just a big pain in the butt. Memory use wasn't bad... Runtime was 100% by a large margin. Supposedly the best time bin is 155ms while this runs at 17ms. Seems like there's a really large spread in runtimes...
+
+Anyways, fairly simple to implement. A DFS to find the largest level. Then another DFS to sum everything up. We simply need to keep track of which level we're on and add that value. Finally we sort and return the largest value at index k.
+
+Presumably the huge spread in runtimes might be people trying to implement BFS... This would require handling some sort of stack of nodes... Then iterate each level... A big pain. The pain isn't necessary.
+
+Reading the discussion... The takeaway is KISS... People are trying to use very specific tools as a hammer when you could just actually use a hammer instead.
+
+```C
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+
+int compare(long long *a, long long *b) {
+    if (*a<*b) {
+        return -1;
+    } else if (*a==*b) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+long long kthLargestLevelSum(struct TreeNode* root, int k) {
+    int l = levels(root);
+    if (l<k) {
+        return -1;
+    }
+    long long *sums = calloc(l,sizeof(long long));
+    dfs(root,sums,0);
+    qsort(sums,l,sizeof(long long),compare);
+    // for (int i=0; i<l; i++) {
+    //     printf("%ld\n",sums[i]);
+    // }
+    return sums[l-k];
+}
+
+int levels(struct TreeNode* n) {
+    if (n==NULL) {
+        return 0;
+    }
+    int l = 1+levels(n->left);
+    int r = 1+levels(n->right);
+    if (l<r) {
+        return r;
+    } else {
+        return l;
+    }
+}
+
+void dfs(struct TreeNode* n, long long *sums, int lvl) {
+    if (n==NULL) {
+        return;
+    }
+    sums[lvl] += n->val;
+    dfs(n->left,sums,lvl+1);
+    dfs(n->right,sums,lvl+1);
+}
+```
+
+# 2024-10-21
+[1593. Split a String Into the Max Number of Unique Substrings](https://leetcode.com/problems/split-a-string-into-the-max-number-of-unique-substrings/)
+
+Tried to do it greedily but it doesn't give the best answer. The other way is doing a "classic" bruteforce DFS to find the best solution. We can "backtrack" the HashSet by removing what we've inserted. This allows us to only use a single HashSet and avoid using too much memory.
+
+## Bruteforce DFS
+```Rust
+use std::collections::HashSet;
+
+impl Solution {
+    pub fn max_unique_split(s: String) -> i32 {
+        /*
+        let mut i=0;
+        let mut set = HashSet::new();
+
+        while i<s.len() {
+            let mut j = i+1;
+            while j<=s.len() && !set.insert(s[i..j].to_string()) {
+                j += 1;
+            }
+            i = j;
+        }
+
+        println!("{:?}",set);
+        set.len() as i32
+        */
+
+        let mut set = HashSet::new();
+        dfs(&s,0,1,&mut set)
+    }
+}
+
+fn dfs(s: &String, i: usize, j: usize, set: &mut HashSet<String>) -> i32 {
+    if i>=s.len() {
+        return set.len() as i32;
+    }
+    if j>s.len() {
+        return set.len() as i32;
+    }
+
+    let mut max = set.len() as i32;
+    if set.insert(s[i..j].to_string()) {
+        //println!("{} {} {} {}",i,j,set.len(),s[i..j].to_string());
+        let a = dfs(s,j,j+1,set);
+        if a>max { max = a; }
+        set.remove(&s[i..j].to_string());
+    }
+    let a = dfs(s,i,j+1,set);
+    if a>max { max = a; }
+    
+    max
+}
+```
+
 # 2024-10-20
 [1106. Parsing A Boolean Expression](https://leetcode.com/problems/parsing-a-boolean-expression/)
 
