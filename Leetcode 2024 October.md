@@ -1,3 +1,70 @@
+# 2024-10-24
+[951. Flip Equivalent Binary Trees](https://leetcode.com/problems/flip-equivalent-binary-trees/)
+
+Just a DFS solution. With recursive problems, you try to cover all of the possibilities that could occur. The first part covers things which are "obvious" like if both trees are empty (NULL) or if both have the same values. From there, we can do recursive calls to check if the left of the first root is the same as the left of the second root... Otherwise it's the left of the first and the right of the second. Putting it another way, either L/L and R/R are the same or L/R and R/L is the same.
+
+I posted two "ways" to write it, but one looks nicer than the other.
+
+```C
+\bool dfs(struct TreeNode* r1, struct TreeNode* r2) {
+    if (r1==NULL && r2==NULL) {
+        return true;
+    }
+    if (r1==NULL || r2==NULL) {
+        return false;
+    }
+    if (r1->val != r2->val) {
+        return false;
+    }
+    return (dfs(r1->left,r2->left)
+        && dfs(r1->right,r2->right)) ||
+        (dfs(r1->left,r2->right)
+        && dfs(r1->right,r2->left));
+}
+
+bool flipEquiv(struct TreeNode* root1, struct TreeNode* root2) {
+    return dfs(root1,root2);
+}
+```
+
+```C
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+bool dfs(struct TreeNode* r1, struct TreeNode* r2) {
+    if (r1==NULL && r2==NULL) {
+        return true;
+    }
+    if (r1==NULL || r2==NULL) {
+        return false;
+    }
+    if (r1->val != r2->val) {
+        return false;
+    }
+
+    if (dfs(r1->left,r2->left)) {
+        // because unique values for each node
+        return dfs(r1->right,r2->right);
+    } else {
+        if (dfs(r1->left,r2->right)) {
+            return dfs(r1->right,r2->left);
+        } else {
+            return false;
+        }
+    }
+    return false;
+}
+
+bool flipEquiv(struct TreeNode* root1, struct TreeNode* root2) {
+    return dfs(root1,root2);
+}
+```
+
 # 2024-10-22
 [2583. Kth Largest Sum in a Binary Tree](https://leetcode.com/problems/kth-largest-sum-in-a-binary-tree/)
 
