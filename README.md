@@ -1,6 +1,7 @@
 # Leetcode-Daily
 My solutions to daily Leetcode problems.
 
+### [2024 November](Leetcode%202024%20November.md)
 ### [2024 October](Leetcode%202024%20October.md)
 ### [2024 September](Leetcode%202024%20September.md)
 ### [2024 August](Leetcode%202024%20August.md)
