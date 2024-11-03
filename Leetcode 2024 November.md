@@ -1,3 +1,43 @@
+# 2024-11-03
+[796. Rotate String](https://leetcode.com/problems/rotate-string/)
+
+A straight forward approach.
+
+```Rust
+impl Solution {
+    pub fn rotate_string(s: String, goal: String) -> bool {
+        if s.len() != goal.len() {
+            return false;
+        }
+
+        let s = s.as_bytes();
+        let goal = goal.as_bytes();
+
+        for i in 0..s.len() {
+            let mut a = 0;
+            let mut b = i; 
+            while b<s.len() && s[a] == goal[b] {
+                a += 1;
+                b += 1;
+            }
+            if b<s.len() {
+                continue;
+            }
+            b = 0;
+            while a<s.len() && s[a] == goal[b] {
+                a += 1;
+                b += 1;
+            }
+            if a<s.len() {
+                continue;
+            }
+            return true;
+        }
+
+        false
+    }
+}
+```
 # 2024-11-02
 [2490. Circular Sentence](https://leetcode.com/problems/circular-sentence/)
 
