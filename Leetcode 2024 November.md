@@ -1,3 +1,26 @@
+# 2024-11-07
+[2275. Largest Combination With Bitwise AND Greater Than Zero](https://leetcode.com/problems/largest-combination-with-bitwise-and-greater-than-zero/)
+
+Just counting. More specifically, we AND with only a single bit for every bit. Using "greedy" logic, having only one bit set will be sufficient for getting the largest combination.
+
+```Rust
+impl Solution {
+    pub fn largest_combination(candidates: Vec<i32>) -> i32 {
+        let mut a = 1;
+        let mut count = vec![0; 24];
+        for i in 0..24 {
+            for c in candidates.iter() {
+                if c&a != 0 {
+                    count[i] += 1;
+                }
+            }
+            a <<= 1;
+        }
+        *count.iter().max().unwrap()
+    }
+}
+```
+
 # 2024-11-06
 [3011. Find if Array Can Be Sorted](https://leetcode.com/problems/find-if-array-can-be-sorted/)
 
