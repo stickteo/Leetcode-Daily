@@ -1,3 +1,67 @@
+# 2024-11-09
+[3133. Minimum Array End](https://leetcode.com/problems/minimum-array-end/)
+
+An interesting "operator". We're basically counting numbers that share the same AND value as the initial number.
+
+An extreme example would show the pattern well... Say x=1024 and n=123. The answer would simply be 1024+123-1 = 1146. 1024 has the 10th bit set. Thus if n is less than x=1024, we simply add and get the answer. An n less than 1024 will not share any bits with x=1024.
+
+Essentially, we just add the two numbers while skipping over the bits that are set.
+
+```Rust
+impl Solution {
+    pub fn min_end(n: i32, x: i32) -> i64 {
+        let mut n = (n-1) as i64;
+        let mut x = x as i64;
+        let mut b = 1 as i64;
+        while n>0 {
+            while b&x>0 {
+                b = b<<1;
+            }
+            if n&1 > 0 {
+                x |= b;
+            }
+            b <<= 1;
+            n >>= 1;
+        }
+        x
+    }
+}
+```
+# 2024-11-08
+[1829. Maximum XOR for Each Query](https://leetcode.com/problems/maximum-xor-for-each-query/)
+
+XOR does have a particular logic to it.
+
+The maximum value we can get is 2^maximumBit - 1.
+
+So to maximize, we have:
+```
+k XOR nums[0] XOR nums[1] XOR ... XOR nums[i] = 2^maximumBit - 1
+```
+For each i.
+Then using XOR algebra we can solve for k:
+```
+k XOR nums[0] XOR nums[1] XOR ... XOR nums[i] (XOR k) = 2^maximumBit - 1 (XOR k)
+nums[0] XOR nums[1] XOR ... XOR nums[i] (XOR 2^maximumBit) = 2^maximumBit - 1 XOR k (XOR 2^maximumBit)
+k = nums[0] XOR nums[1] XOR ... XOR nums[i] XOR 2^maximumBit
+```
+
+
+```Rust
+impl Solution {
+    pub fn get_maximum_xor(nums: Vec<i32>, maximum_bit: i32) -> Vec<i32> {
+        let mut out = vec![0; nums.len()];
+        let mut a = (1<<maximum_bit)-1;
+        for i in 0..nums.len() {
+            a ^= nums[i];
+            out[i] = a;
+        }
+        out.reverse();
+        out
+    }
+}
+```
+
 # 2024-11-07
 [2275. Largest Combination With Bitwise AND Greater Than Zero](https://leetcode.com/problems/largest-combination-with-bitwise-and-greater-than-zero/)
 
