@@ -1,3 +1,149 @@
+# 2024-11-10
+[3097. Shortest Subarray With OR at Least K II](https://leetcode.com/problems/shortest-subarray-with-or-at-least-k-ii/)
+
+Quite a doozy for logic. There are several ideas that need to be proved.
+
+The main idea is having left and right bounds. Starting the the left bound at 0, we calculate the subarray cumulative OR until we have a value over or equal to k. We then recalculate the subarray from the right bound to find our new left bound. These left and right bounds represent the smallest (local) subarray which have a value over or equal to k. We can prove it's the smallest via contradiction.
+
+In short, if we suppose there's a smaller subarray within, we should expect those to be our left and right bounds instead. However during calculation, we never get a value over k. Thus the smaller subarray must not exist.
+
+From there, we simply repeat by incrementing the left bound by 1. (Then find the right bound, the new left bound, increment by 1, repeat...) We do this until we hit the end. Or we calculate a value lower despite hitting the end. (We OR everything in the leftover subarray.)
+
+Sounds simple but the logic is meandering. Took a while for all of the pieces to fall into place. Mainly focused on not getting TLE with an O(n^2) solution. This solution seems like O(n^1.5) in terms of how many OR operations are done. The refinement method helps to remove a lot of candidates/computation.
+
+To reiterate:
+- Left bound = 0
+- Calculate and find right bound
+- Calculate and  refine left bound
+- Record subarray length
+- Increment left bound by 1
+- Repeat and find next right bound...
+- Return shortest bounds
+
+## Logic
+```Rust
+impl Solution {
+    pub fn minimum_subarray_length(nums: Vec<i32>, k: i32) -> i32 {
+        if k==0 {
+            return 1;
+        }
+
+        let mut l = 0;
+        let mut best = nums.len()+1;
+
+        while l<nums.len() {
+            let mut i = l;
+            let mut a = 0;
+            while i<nums.len() && a<k {
+                a |= nums[i];
+                i+=1;
+            }
+            if a<k {
+                break;
+            }
+            i -= 1;
+            let r = i;
+            a = 0;
+            while i<nums.len() && a<k {
+                a |= nums[i];
+                i-=1;
+            }
+            i += 1;
+            l = i;
+            if r-l+1 < best {
+                best = r-l+1;
+            }
+            //println!("{} {}",l,r);
+            l += 1;
+        }
+
+        if best <= nums.len() {
+            best as i32
+        } else {
+            -1
+        }
+    }
+}
+```
+
+## Doesn't work
+```Rust
+impl Solution {
+    pub fn minimum_subarray_length(nums: Vec<i32>, k: i32) -> i32 {
+        if k==0 {
+            return 1;
+        }
+        let mut t = 0;
+        for i in 0..nums.len() {
+            t |= nums[i];
+        }
+        if t<k {
+            return -1;
+        }
+        let mut l = 0;
+        let mut r = 0;
+        let mut best = nums.len();
+        while r<nums.len() {
+            let mut a = 0;
+            while r<nums.len() && a<k {
+                a |= nums[r];
+                r += 1;
+            }
+            l = r-1;
+            a = 0;
+            while l<nums.len() && a<k {
+                a |= nums[l];
+                l -= 1;
+            }
+            l += 1;
+            if r-l < best {
+                best = r-l;
+            }
+            //println!("{} {}",l,r);
+        }
+        best as i32
+    }
+}
+```
+
+## TLE
+```Rust
+impl Solution {
+    pub fn minimum_subarray_length(nums: Vec<i32>, k: i32) -> i32 {
+        let mut b = 0;
+        for i in 0..nums.len() {
+            b |= nums[i];
+        }
+        if b<k {
+            return -1;
+        }
+
+        let mut cum = vec![0; nums.len()];
+        let mut best = nums.len();
+        for i in 0..nums.len() {
+            let mut j = i;
+            let mut a = nums[j];
+            while j<nums.len() && a<k {
+                a |= cum[j];
+                cum[j] = a;
+                j -= 1;
+            }
+            if a>=k && j<i {
+                j += 1;
+            }
+            if j>nums.len() {
+                j += 1;
+            }
+            if a>=k && i-j+1<best {
+                best = i-j+1;
+                //print!("*");
+            }
+            //println!("{:?} {} {}",cum,i,j);
+        }
+        best as i32
+    }
+}
+```
 # 2024-11-09
 [3133. Minimum Array End](https://leetcode.com/problems/minimum-array-end/)
 
