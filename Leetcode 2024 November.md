@@ -1,3 +1,46 @@
+# 2024-11-11
+[2601. Prime Subtraction Operation](https://leetcode.com/problems/prime-subtraction-operation/)
+
+Took a greedy approach and start subtracting primes from the end of the array. The problem simply becomes an inductive problem.
+
+It's always true if we can have negative numbers. Though a counter example shows we can't have 0. (5,8,3) can become (0,1,3).
+
+```Rust
+impl Solution {
+    pub fn prime_sub_operation(nums: Vec<i32>) -> bool {
+        let p = vec![0, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31,
+            37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+            89, 97, 101, 103, 107, 109, 113, 127, 131, 137,
+            139, 149, 151, 157, 163, 167, 173, 179, 181, 191,
+            193, 197, 199, 211, 223, 227, 229, 233, 239, 241,
+            251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
+            311, 313, 317, 331, 337, 347, 349, 353, 359, 367,
+            373, 379, 383, 389, 397, 401, 409, 419, 421, 431,
+            433, 439, 443, 449, 457, 461, 463, 467, 479, 487,
+            491, 499, 503, 509, 521, 523, 541, 547, 557, 563,
+            569, 571, 577, 587, 593, 599, 601, 607, 613, 617,
+            619, 631, 641, 643, 647, 653, 659, 661, 673, 677,
+            683, 691, 701, 709, 719, 727, 733, 739, 743, 751,
+            757, 761, 769, 773, 787, 797, 809, 811, 821, 823,
+            827, 829, 839, 853, 857, 859, 863, 877, 881, 883,
+            887, 907, 911, 919, 929, 937, 941, 947, 953, 967,
+            971, 977, 983, 991, 997, 1009];
+        let mut nums = nums;
+        for i in (0..nums.len()-1).rev() {
+            let mut j=0;
+            while nums[i]-p[j]>=nums[i+1] {
+                j+=1;
+            }
+            nums[i] -= p[j];
+            if nums[i] < 1 {
+                return false;
+            }
+        }
+        true
+    }
+}
+```
+
 # 2024-11-10
 [3097. Shortest Subarray With OR at Least K II](https://leetcode.com/problems/shortest-subarray-with-or-at-least-k-ii/)
 
