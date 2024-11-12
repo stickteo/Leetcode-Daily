@@ -1,3 +1,45 @@
+# 2024-11-12
+[2070. Most Beautiful Item for Each Query](https://leetcode.com/problems/most-beautiful-item-for-each-query/)
+
+Not the fastest solution but works. We sort then calculate the best "beauty" at each price point. From there each query is a binary search.
+
+```Rust
+impl Solution {
+    pub fn maximum_beauty(items: Vec<Vec<i32>>, queries: Vec<i32>) -> Vec<i32> {
+        let mut items = items;
+        items.sort();
+        for i in 0..items.len()-1 {
+            if items[i+1][1]<items[i][1] {
+                items[i+1][1] = items[i][1];
+            }
+        }
+        for i in (0..items.len()-1).rev() {
+            if items[i][0] == items[i+1][0] {
+                items[i][1] = items[i+1][1];
+            }
+        }
+        //items.dedup();
+        //println!("{:?}",items);
+        let mut out = vec![0; queries.len()];
+        for i in 0..queries.len() {
+            out[i] = match items.binary_search_by(|x| x[0].cmp(&queries[i])) {
+                Ok(a) => {
+                    items[a][1]
+                }
+                Err(a) => {
+                    if a < 1 {
+                        0
+                    } else {
+                        items[a-1][1]
+                    }
+                }
+            }
+        }
+        out
+    }
+}
+```
+
 # 2024-11-11
 [2601. Prime Subtraction Operation](https://leetcode.com/problems/prime-subtraction-operation/)
 
