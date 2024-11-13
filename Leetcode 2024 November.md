@@ -1,13 +1,70 @@
+# 2024-11-13
+[2563. Count the Number of Fair Pairs](https://leetcode.com/problems/count-the-number-of-fair-pairs/)
+
+Works good enough. A single sort but a lot of array element removals... In theory O(n^2). But searches and calculations cost O(n * logn).
+
+For the second version we have O(n * logn). We can double count as long as we divide by two at the end. The special cases are when the index is itself. (Read some of the comments to figure it out... We notice that we are matching every possible pair and the order doesn't matter since we're computing a sum.) 
+
+## Best (Mathematical)
+```Rust
+impl Solution {
+    pub fn count_fair_pairs(nums: Vec<i32>, lower: i32, upper: i32) -> i64 {
+        let mut a = nums.clone();
+        a.sort_unstable();
+        let mut b = 0;
+        for e in nums.iter() {
+            let l = a.partition_point(|&x| x<lower-e);
+            let u = a.partition_point(|&x| x<=upper-e);
+            let mut d = u-l;
+            if *e>=lower-e && *e<=upper-e {
+                d -= 1;
+            }
+            if u>=l {
+                b += d as i64;
+            }
+        }
+        b/2
+    }
+}
+```
+
+## Bruteforce
+```Rust
+impl Solution {
+    pub fn count_fair_pairs(nums: Vec<i32>, lower: i32, upper: i32) -> i64 {
+        let mut a = nums.clone();
+        a.sort_unstable();
+        let mut b = 0;
+        for e in nums.iter() {
+            match a.binary_search(e) {
+                Ok(i) => {
+                    a.remove(i);
+                }
+                Err(_) => ()
+            }
+            let l = a.partition_point(|&x| x<lower-e);
+            let u = a.partition_point(|&x| x<=upper-e);
+            if u>=l {
+                b += (u-l) as i64;
+            }
+        }
+        b
+    }
+}
+```
+
 # 2024-11-12
 [2070. Most Beautiful Item for Each Query](https://leetcode.com/problems/most-beautiful-item-for-each-query/)
 
 Not the fastest solution but works. We sort then calculate the best "beauty" at each price point. From there each query is a binary search.
 
+Using unstable sort makes it 100% fastest as well as use less memory. This is the best solution.
+
 ```Rust
 impl Solution {
     pub fn maximum_beauty(items: Vec<Vec<i32>>, queries: Vec<i32>) -> Vec<i32> {
         let mut items = items;
-        items.sort();
+        items.sort_unstable();
         for i in 0..items.len()-1 {
             if items[i+1][1]<items[i][1] {
                 items[i+1][1] = items[i][1];
