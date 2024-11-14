@@ -1,3 +1,75 @@
+# 2024-11-14
+[2064. Minimized Maximum of Products Distributed to Any Store](https://leetcode.com/problems/minimized-maximum-of-products-distributed-to-any-store/)
+
+Took the hints for this one. Use the maximum of quantities as the upper bound for the binary search.
+
+I still haven't figured out how to really write a binary search loop... It's not as "clean" as I want but it works. In this case, the result for comparison is true or false. A bad loop condition can lead to an infinite loop.
+
+## Binary Search
+```Rust
+impl Solution {
+    pub fn minimized_maximum(n: i32, quantities: Vec<i32>) -> i32 {
+        let q = quantities;
+        let mut top = *q.iter().reduce(|acc,x| if acc > x {acc} else {x}).unwrap();
+        let mut bot = 1;
+        while bot<top-1 {
+            let k = (bot+top)/2;
+            if can_dist(&q,n,k) {
+                top = k;
+            } else {
+                bot = k;
+            }
+        }
+        if can_dist(&q,n,bot) {
+            bot
+        } else {
+            top
+        }
+    }
+}
+
+fn can_dist(q: &Vec<i32>, n: i32, k: i32) -> bool {
+    let mut m = 0;
+    for e in q.iter() {
+        let a = (e+k-1)/k;
+        m += a;
+        if m>n {
+            return false;
+        }
+    }
+    true
+}
+```
+
+## Greedy Attempt
+```Rust
+impl Solution {
+    pub fn minimized_maximum(n: i32, quantities: Vec<i32>) -> i32 {
+        let mut q = quantities.clone();
+        q.sort_unstable();
+        let mut sum = q.iter().fold(0, |acc,e| acc+e);
+        let mut n = n;
+        let mut max = 0;
+
+        for e in q.iter() {
+            let a = sum/n;
+            let mut m = (e+a-1)/a;
+            if m==0 {
+                m = 1;
+            }
+            let d = e/m;
+            print!("{}={}*{} ",e,m,d);
+            if d>max {
+                max = d;
+            }
+            sum -= e;
+            n -= m;
+        }
+
+        max
+    }
+}
+```
 # 2024-11-13
 [2563. Count the Number of Fair Pairs](https://leetcode.com/problems/count-the-number-of-fair-pairs/)
 
