@@ -1,3 +1,62 @@
+# 2024-11-15
+[1574. Shortest Subarray to be Removed to Make Array Sorted](https://leetcode.com/problems/shortest-subarray-to-be-removed-to-make-array-sorted/)
+
+Binary search implementation. Mainly worked on edge cases until every test case passed. Not the most clean code as there are a bunch of "patches" done like adding one here or subtracting another one here... Indexing stuff...
+
+```Rust
+impl Solution {
+    pub fn find_length_of_shortest_subarray(arr: Vec<i32>) -> i32 {
+        let mut arr = arr;
+        arr.insert(0,0);
+        arr.push(1_000_000_000);
+        let mut a = 0;
+        while a<arr.len()-1 && arr[a]<=arr[a+1] {
+            a += 1;
+        }
+        println!("{} {}",a,arr[a]);
+        if a==arr.len()-1 {
+            return 0;
+        }
+        let mut b = arr.len()-1;
+        while b>0 && arr[b]>=arr[b-1] {
+            b -= 1;
+        }
+        println!("{} {}",b,arr[b]);
+        
+        if arr[0]>arr[arr.len()-1] {
+            return if a+1>arr.len()+1-b {
+                arr.len()+1-a
+            } else {
+                b
+            } as i32;
+        }
+        let mut lo = b-a;
+        let mut hi = arr.len()-1;
+        while lo<hi-1 {
+            let m = (lo+hi)/2;
+            if test(&arr,a,b,m) {
+                hi = m;
+            } else {
+                lo = m;
+            }
+        }
+        if test(&arr,a,b,lo) {
+            (lo-1) as i32
+        } else {
+            (hi-1) as i32
+        }
+    }
+}
+
+fn test(arr: &Vec<i32>, a: usize, b: usize, k: usize) -> bool {
+    for i in 0..=a {
+        if i+k>=b && i+k<arr.len() && arr[i]<=arr[i+k] {
+            return true;
+        }
+    }
+    false
+}
+```
 # 2024-11-14
 [2064. Minimized Maximum of Products Distributed to Any Store](https://leetcode.com/problems/minimized-maximum-of-products-distributed-to-any-store/)
 
