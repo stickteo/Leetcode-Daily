@@ -1,3 +1,67 @@
+# 2024-11-16
+[3254. Find the Power of K-Size Subarrays I](https://leetcode.com/problems/find-the-power-of-k-size-subarrays-i/)
+
+Thinking about it, I think the better solution is to count the number of consecutive terms then output whenever it equals or is greater than k-1.
+
+## Counting
+```Rust
+impl Solution {
+    pub fn results_array(nums: Vec<i32>, k: i32) -> Vec<i32> {
+        if k==1 {
+            return nums;
+        }
+        let k = k as usize;
+        let mut out = Vec::new();
+        let mut m = 0;
+        for (i,w) in nums.windows(2).enumerate() {
+            if w[0]+1==w[1] {
+                m += 1;
+            } else {
+                m = 0;
+            }
+            if m>=k-1 {
+                out.push(nums[i+1]);
+            } else {
+                out.push(-1);
+            }
+        }
+        out[k-2..].to_vec()
+    }
+}
+```
+
+## Logical AND
+```Rust
+impl Solution {
+    pub fn results_array(nums: Vec<i32>, k: i32) -> Vec<i32> {
+        if k==1 {
+            return nums;
+        }
+        let k = k as usize;
+        let mut b = vec![false; nums.len()];
+        for i in 1..nums.len() {
+            if nums[i-1]+1==nums[i] {
+                b[i] = true;
+            }
+        }
+        //println!("{:?}",b);
+        let mut out = vec![0; nums.len()-k+1];
+        let mut i = 0;
+        let mut iter = b.windows(k-1);
+        iter.next();
+        for w in iter {
+            if w.iter().fold(true, |acc,x| acc && *x) {
+                out[i] = nums[i+k-1];
+            } else {
+                out[i] = -1;
+            }
+            i += 1;
+        }
+
+        out
+    }
+}
+```
 # 2024-11-15
 [1574. Shortest Subarray to be Removed to Make Array Sorted](https://leetcode.com/problems/shortest-subarray-to-be-removed-to-make-array-sorted/)
 
