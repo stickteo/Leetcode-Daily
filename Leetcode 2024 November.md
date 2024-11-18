@@ -1,3 +1,106 @@
+# 2024-11-18
+[1652. Defuse the Bomb](https://leetcode.com/problems/defuse-the-bomb/)
+
+```Rust
+impl Solution {
+    pub fn decrypt(code: Vec<i32>, k: i32) -> Vec<i32> {
+        if k==0 {
+            let out = vec![0; code.len()];
+            return out;
+        }
+        let m = if k>0 {
+            k as usize
+        } else {
+            (-k) as usize
+        };
+        let mut a = if k>0 {
+            [&code[1..code.len()],&code[0..k as usize]].concat()
+        } else {
+            [&code[code.len()-m..code.len()],&code[0..code.len()-1]].concat()
+        };
+        //println!("{:?}",a);
+        a.windows(m).map(|x| x.iter().fold(0, |acc,v| acc+v)).collect()
+    }
+}
+```
+
+# 2024-11-17
+[862. Shortest Subarray with Sum at Least K](https://leetcode.com/problems/shortest-subarray-with-sum-at-least-k/)
+
+## Attempt
+```Rust
+impl Solution {
+    pub fn shortest_subarray(nums: Vec<i32>, k: i32) -> i32 {
+        let k = k as i64;
+        let mut cumsum = Vec::new();
+        cumsum.push(0 as i64);
+        for e in nums.iter() {
+            let a = cumsum.last().unwrap() + *e as i64;
+            cumsum.push(a);
+        }
+        println!("{:?}",cumsum);
+        let mut cumsum2 = cumsum.clone();
+        for i in (1..cumsum.len()).rev() {
+            if nums[i-1]<0 && cumsum[i-1]>cumsum[i] {
+                cumsum[i-1] = cumsum[i];
+            }
+        }
+        println!("{:?}",cumsum);
+        let mut lo=1;
+        let mut hi=nums.len();
+        while lo<hi-1 {
+            let m = (lo+hi)/2;
+            if check(&cumsum, k, m) {
+                hi = m;
+            } else {
+                lo = m;
+            }
+        }
+        println!("{} {}",lo,hi);
+        if check(&cumsum, k, lo) {
+            return lo as i32;
+        } else if check(&cumsum, k, hi) {
+            return hi as i32;
+        }
+
+        let mut cumsum = cumsum2;
+        for i in 0..cumsum.len()-1 {
+            if nums[i]<0 && cumsum[i]>cumsum[i+1] {
+                cumsum[i+1] = cumsum[i];
+            }
+        }
+        println!("{:?}",cumsum);
+        let mut lo=1;
+        let mut hi=nums.len();
+        while lo<hi-1 {
+            let m = (lo+hi)/2;
+            if check(&cumsum, k, m) {
+                hi = m;
+            } else {
+                lo = m;
+            }
+        }
+        println!("{} {}",lo,hi);
+        if check(&cumsum, k, lo) {
+            return lo as i32;
+        } else if check(&cumsum, k, hi) {
+            return hi as i32;
+        }
+
+        -1
+    }
+}
+
+fn check(cumsum: &Vec<i64>, k: i64, m: usize) -> bool {
+    for i in 0..cumsum.len()-m {
+        if cumsum[i+m]-cumsum[i] >= k {
+            return true;
+        }
+    }
+    false
+}
+```
+
 # 2024-11-16
 [3254. Find the Power of K-Size Subarrays I](https://leetcode.com/problems/find-the-power-of-k-size-subarrays-i/)
 
