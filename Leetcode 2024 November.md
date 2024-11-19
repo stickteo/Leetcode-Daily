@@ -1,3 +1,42 @@
+# 2024-11-19
+[2461. Maximum Sum of Distinct Subarrays With Length K](https://leetcode.com/problems/maximum-sum-of-distinct-subarrays-with-length-k/)
+
+Uses a HashMap and a window sum.
+
+The window sum is typical for finding sums of a certain subarray length. While the HashMap is used to indicate distinct elements.
+
+```Rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn maximum_subarray_sum(nums: Vec<i32>, k: i32) -> i64 {
+        let mut max = 0;
+        let mut sum = 0;
+        let mut map = HashMap::new();
+        let k = k as usize;
+        for i in 0..k {
+            map.entry(nums[i]).and_modify(|v| *v+=1).or_insert(1);
+            sum += nums[i] as i64;
+        }
+        if map.len() == k {
+            max = sum;
+        }
+        for i in 0..nums.len()-k {
+            let v = map.remove(&nums[i]).unwrap();
+            if v>1 {
+                map.insert(nums[i],v-1);
+            }
+            sum -= nums[i] as i64;
+            sum += nums[i+k] as i64;
+            map.entry(nums[i+k]).and_modify(|v| *v+=1).or_insert(1);
+            if map.len() == k && sum>max {
+                max = sum;
+            }
+        }
+        max
+    }
+}
+```
 # 2024-11-18
 [1652. Defuse the Bomb](https://leetcode.com/problems/defuse-the-bomb/)
 
