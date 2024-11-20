@@ -1,3 +1,89 @@
+# 2024-11-20
+[2516. Take K of Each Character From Left and Right](https://leetcode.com/problems/take-k-of-each-character-from-left-and-right/)
+
+```Rust
+impl Solution {
+    pub fn take_characters(s: String, k: i32) -> i32 {
+        if k==0 {
+            return 0;
+        }
+
+        let mut counta = Vec::new();
+        let mut countb = Vec::new();
+        let mut countc = Vec::new();
+
+        let mut a = 0;
+        let mut b = 0;
+        let mut c = 0;
+
+        counta.push(a);
+        countb.push(b);
+        countc.push(c);
+
+        for d in s.chars() {
+            match d {
+                'a' => {
+                    a+=1;
+                }
+                'b' => {
+                    b+=1;
+                }
+                'c' => {
+                    c+=1;
+                }
+                _ => ()
+            }
+            counta.push(a);
+            countb.push(b);
+            countc.push(c);
+        }
+
+        if a<k || b<k || c<k {
+            return -1;
+        }
+
+        let mut hi = s.len()- k as usize * 3;
+        let mut lo = 1;
+        //println!("{} {}",lo,hi);
+
+        if hi==0 {
+            return s.len() as i32;
+        }
+
+        while lo<hi-1 {
+            let m = (lo+hi)/2;
+            //println!("{} {} {}",lo,m,hi);
+            if check(&counta,&countb,&countc,a-k,b-k,c-k,m) {
+                lo = m;
+            } else {
+                hi = m;
+            }
+        }
+
+        if check(&counta,&countb,&countc,a-k,b-k,c-k,hi) {
+            (s.len()-hi) as i32
+        } else {
+            (s.len()-lo) as i32
+        }
+    }
+}
+
+fn check(ca: &Vec<i32>, cb: &Vec<i32>, cc: &Vec<i32>, ka: i32, kb: i32, kc: i32, m: usize) -> bool {
+    if m == 0 {
+        return true;
+    }
+    for i in 0..ca.len()-m {
+        let a = ca[i+m]-ca[i];
+        let b = cb[i+m]-cb[i];
+        let c = cc[i+m]-cc[i];
+        if a<=ka && b<=kb && c<=kc {
+            return true;
+        }
+    }
+    false
+}
+```
+
 # 2024-11-19
 [2461. Maximum Sum of Distinct Subarrays With Length K](https://leetcode.com/problems/maximum-sum-of-distinct-subarrays-with-length-k/)
 
