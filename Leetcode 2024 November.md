@@ -1,5 +1,165 @@
+# 2024-11-21
+[2257. Count Unguarded Cells in the Grid](https://leetcode.com/problems/count-unguarded-cells-in-the-grid/)
+
+There is a faster way but the implementation is difficult. The "dumb" and easy way is just to simulate it. (And hope it's not TLE.)
+
+The hints also indicate to use the brute-force way to do it...
+
+## Bruteforce Simulation (almost TLE)
+```Rust
+impl Solution {
+    pub fn count_unguarded(m: i32, n: i32, guards: Vec<Vec<i32>>, walls: Vec<Vec<i32>>) -> i32 {
+        let m = m as usize;
+        let n = n as usize;
+        let mut wg = vec![vec![false; n]; m]; // walls grid
+        let mut gg = vec![vec![true; n]; m]; // guarded grid
+        //let mut ggg = vec![vec![false; n]; m]; // guards grid
+        for w in walls.iter() {
+            wg[w[0] as usize][w[1] as usize] = true;
+            gg[w[0] as usize][w[1] as usize] = false;
+        }
+        for g in guards.iter() {
+            wg[g[0] as usize][g[1] as usize] = true;
+            gg[g[0] as usize][g[1] as usize] = false;
+        }
+        for g in guards.iter() {
+            let y = g[0] as usize;
+            let x = g[1] as usize;
+            //gg[y][x] = false;
+
+            // up
+            let mut i = y-1;
+            while i<m && !wg[i][x] {
+                gg[i][x] = false;
+                i-=1;
+            }
+            // down
+            i = y+1;
+            while i<m && !wg[i][x] {
+                gg[i][x] = false;
+                i+=1;
+            }
+            // left
+            let mut j = x-1;
+            while j<n && !wg[y][j] {
+                gg[y][j] = false;
+                j-=1;
+            }
+            // right
+            j = x+1;
+            while j<n && !wg[y][j] {
+                gg[y][j] = false;
+                j+=1;
+            }
+        }
+
+        let mut c = 0;
+
+        for e in gg.iter() {
+            for f in e.iter() {
+                if *f {
+                    c += 1;
+                }
+            }
+        }
+
+        c
+    }
+}
+```
+
+## Complex Attempt
+```Rust
+impl Solution {
+    pub fn count_unguarded(m: i32, n: i32, guards: Vec<Vec<i32>>, walls: Vec<Vec<i32>>) -> i32 {
+        println!("n:{} m:{}",n,m);
+        let m = m as usize;
+        let n = n as usize;
+        let mut grow = vec![Vec::new(); m as usize];
+        let mut gcol = vec![Vec::new(); n as usize];
+        let mut wrow = vec![Vec::new(); m as usize];
+        let mut wcol = vec![Vec::new(); n as usize];
+        
+        for g in guards.iter() {
+            grow[g[0] as usize].push(g[1]);
+            gcol[g[1] as usize].push(g[0]);
+        }
+        for w in walls.iter() {
+            wrow[w[0] as usize].push(w[1]);
+            wcol[w[1] as usize].push(w[0]);
+        }
+
+        for g in grow.iter_mut() {
+            g.sort_unstable();
+        }
+        for g in gcol.iter_mut() {
+            g.sort_unstable();
+        }
+        for w in wrow.iter_mut() {
+            w.sort_unstable();
+        }
+        for w in wcol.iter_mut() {
+            w.sort_unstable();
+        }
+
+        println!("grow {:?}",grow);
+        println!("gcol {:?}",gcol);
+        println!("wrow {:?}",wrow);
+        println!("wcol {:?}",wcol);
+
+        //let mut gr = vec![0; n];
+        let mut gc = vec![0; n as usize];
+        //let mut wr = vec![0; n];
+        let mut wc = vec![0; n as usize];
+
+        let mut c = 0;
+        let mut d = 0;
+
+        for i in 0..m {
+            let mut gr = 0;
+            let mut wr = 0;
+            for j in 0..n {
+                print!("{} {} ",i,j);
+                let j = j as i32;
+                while gr<grow[i].len() && j<grow[i][gr] {
+                    gr+=1;
+                }
+                while wr<wrow[i].len() && j<wrow[i][wr] {
+                    wr+=1;
+                }
+                if (gr<grow[i].len() && j==grow[i][gr]) || 
+                   (wr<wrow[i].len() && j==wrow[i][wr]) {
+                    c += 1;
+                    continue;
+                }
+
+                let j = j as usize;
+                let i = i as i32;
+                while gc[j]<gcol[j].len() && i<gcol[j][gc[j]] {
+                    gc[j]+=1;
+                }
+                while wc[j]<wcol[j].len() && i<wcol[j][wc[j]] {
+                    wc[j]+=1;
+                }
+
+                let i = i as usize;
+                let guard_left = j>0 && gr<grow[i].len() &&
+                    (wr>=wrow[i].len() || grow[i][gr-1]>wrow[i][wr-1]);
+                println!(" gl: {}",guard_left);
+                
+
+            }
+        }
+
+        0
+    }
+}
+```
+
 # 2024-11-20
 [2516. Take K of Each Character From Left and Right](https://leetcode.com/problems/take-k-of-each-character-from-left-and-right/)
+
+A binary search solution. It's similar to a typical cumulative sum but inverted.
 
 ```Rust
 impl Solution {
