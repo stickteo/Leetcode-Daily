@@ -1,3 +1,33 @@
+# 2024-11-22
+[1072. Flip Columns For Maximum Number of Equal Rows](https://leetcode.com/problems/flip-columns-for-maximum-number-of-equal-rows/)
+
+Hashing is probably faster than sorting and counting.
+
+```Rust
+use std::collections::HashMap;
+impl Solution {
+    pub fn max_equal_rows_after_flips(matrix: Vec<Vec<i32>>) -> i32 {
+        let mut mat = matrix;
+        for m in mat.iter_mut() {
+            if m[0] == 1 {
+                for e in m.iter_mut() {
+                    if *e==0 {
+                        *e=1;
+                    } else {
+                        *e=0;
+                    }
+                }
+            }
+        }
+        let mut map = HashMap::new();
+        for m in mat.iter() {
+            map.entry(m).and_modify(|x| *x+=1).or_insert(1);
+        }
+        map.iter().map(|x| x.1).fold(0, |acc,x| if *x>acc {*x} else {acc})
+    }
+}
+```
+
 # 2024-11-21
 [2257. Count Unguarded Cells in the Grid](https://leetcode.com/problems/count-unguarded-cells-in-the-grid/)
 
