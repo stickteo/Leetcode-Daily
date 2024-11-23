@@ -1,3 +1,45 @@
+# 2024-11-23
+[1861. Rotating the Box](https://leetcode.com/problems/rotating-the-box/)
+
+Not the fastest. Simply counting until it hits and obstacle or reaches the end. Works.
+
+```Rust
+impl Solution {
+    pub fn rotate_the_box(boxx: Vec<Vec<char>>) -> Vec<Vec<char>> {
+        let mut out = vec![vec!['.'; boxx.len()]; boxx[0].len()];
+        let mut c = 0; // count
+        let mut s = 0; // stones
+        let h = boxx.len();
+        let w = boxx[0].len();
+        for i in 0..h {
+            for j in 0..w {
+                c += 1;
+                match boxx[i][j] {
+                    '#' => {
+                        s += 1;
+                    }
+                    '*' => {
+                        out[j][h-1-i] = '*';
+                        for k in j-s..j {
+                            out[k][h-1-i] = '#';
+                        }
+                        c = 0;
+                        s = 0;
+                    }
+                    '.' => (),
+                    _ => ()
+                }
+            }
+            //println!("{} {}",w,s);
+            for k in w-s..w {
+                out[k][h-1-i] = '#';
+            }
+            s = 0;
+        }
+        out
+    }
+}
+```
 # 2024-11-22
 [1072. Flip Columns For Maximum Number of Equal Rows](https://leetcode.com/problems/flip-columns-for-maximum-number-of-equal-rows/)
 
