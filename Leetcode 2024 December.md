@@ -1,3 +1,41 @@
+# 2024-12-06
+[2554. Maximum Number of Integers to Choose From a Range I](https://leetcode.com/problems/maximum-number-of-integers-to-choose-from-a-range-i/)
+
+Got it on second try. The banned list didn't guarantee no duplicates.
+
+```Rust
+impl Solution {
+    pub fn max_count(banned: Vec<i32>, n: i32, max_sum: i32) -> i32 {
+        let mut banned = banned;
+        banned.sort_unstable();
+        banned.dedup();
+        //println!("{:?}", banned);
+        let mut i = 1;
+        let mut m = 0;
+        let mut sum = 0;
+        let mut count = 0;
+        while i<=n && sum<max_sum {
+            if m<banned.len() && i==banned[m] {
+                m += 1;
+            } else {
+                //print!("{} ",i);
+                sum += i;
+                count += 1;
+            }
+            i += 1;
+        }
+        //println!(": {}",sum);
+        if sum>max_sum {
+            i -= 1;
+            sum -= i;
+            count -= 1;
+        }
+        //println!("{}",sum);
+        count
+    }
+}
+```
+
 # 2024-12-05
 [2337. Move Pieces to Obtain a String](https://leetcode.com/problems/move-pieces-to-obtain-a-string/)
 
