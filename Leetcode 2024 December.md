@@ -1,3 +1,211 @@
+# 2024-12-11
+[2779. Maximum Beauty of an Array After Applying Operation](https://leetcode.com/problems/maximum-beauty-of-an-array-after-applying-operation/)
+
+I thought about a lot of complicated ways to solve this problem... In particular, a "subsequence" simply means choosing any amount of elements... This means we can sort the elements.
+
+From there, we notice we can choose a range of elements from n-k to n+k. Putting it another way, from n to n+2k. 
+
+```Rust
+impl Solution {
+    pub fn maximum_beauty(nums: Vec<i32>, k: i32) -> i32 {
+        let mut nums = nums;
+        nums.sort_unstable();
+        let mut i = 0;
+        let mut j = 0;
+        let mut c = 0;
+        while i<nums.len() && j<nums.len() {
+            while j<nums.len() && nums[j]<=nums[i]+2*k {
+                j += 1;
+            }
+            if j-i > c {
+                c = j-i;
+            }
+            i += 1;
+        }
+        c as i32
+    }
+}
+```
+
+# 2024-12-10
+[2981. Find Longest Special Substring That Occurs Thrice I](https://leetcode.com/problems/find-longest-special-substring-that-occurs-thrice-i/)
+
+```Rust
+use std::collections::HashMap;
+
+impl Solution {
+    pub fn maximum_length(s: String) -> i32 {
+        let mut lo = 1;
+        let mut hi = s.len();
+
+        while lo<hi-1 {
+            let m = (lo+hi)/2;
+            if check(&s, m) {
+                lo = m;
+            } else {
+                hi = m;
+            }
+        }
+
+        if check(&s, lo) {
+            return lo as i32;
+        } else if check(&s, hi) {
+            return hi as i32;
+        } else {
+            return -1;
+        }
+    }
+}
+
+fn check(s: &String, k: usize) -> bool {
+    let mut map = HashMap::new();
+    for w in s.as_bytes().windows(k) {
+        let a = w[0];
+        let mut b = false;
+        for i in 1..w.len() {
+            if a!=w[i] {
+                b = true;
+                break;
+            }
+        }
+        if b {
+            continue;
+        }
+        map.entry(w)
+            .and_modify(|e| {*e += 1})
+            .or_insert(1);
+        if map[w] >= 3 {
+            //println!("{:?}",String::from_utf8(w.to_vec()));
+            return true;
+        }
+    }
+    false
+}
+```
+
+# 2024-12-09
+[3152. Special Array II](https://leetcode.com/problems/special-array-ii/)
+
+```Rust
+impl Solution {
+    pub fn is_array_special(nums: Vec<i32>, queries: Vec<Vec<i32>>) -> Vec<bool> {
+        let mut a: Vec<i32> = vec![0].into_iter().chain(nums.windows(2).map(|x| (x[0]^x[1])&1)).collect();
+        //println!("{:?}",a);
+        let b: Vec<i32> = a.iter().scan(0, |state, &x| {
+            *state = *state+x;
+            Some(*state)
+        }).collect();
+        //println!("{:?}",b);
+
+        queries.iter().map(|x| b[x[1] as usize]-b[x[0] as usize]==x[1]-x[0]).collect()
+    }
+}
+```
+
+# 2024-12-08
+
+## TLE
+```Rust
+use std::collections::BinaryHeap;
+
+impl Solution {
+    pub fn max_two_events(events: Vec<Vec<i32>>) -> i32 {
+        let mut best = 0;
+        let mut heap = BinaryHeap::new();
+        for e in events.iter() {
+            heap.push((e[2],e[0],e[1]));
+        }
+        while !heap.is_empty() {
+            let mut rest = BinaryHeap::new();
+            while let Some(e) = heap.pop() {
+                //println!("{:?} {:?}",e,heap);
+                let mut sum = e.0;
+                if let Some(f) = heap.peek() {
+                    let mut best_possible = e.0 + f.0;
+                    if best_possible<=best {
+                        return best;
+                    }
+                }
+                while let Some(f) = heap.pop() {
+                    if e.2<f.1 || f.2<e.1 {
+                        sum += f.0;
+                        break;
+                    }
+                    rest.push(f);
+                }
+                if sum>best {
+                    best = sum;
+                }
+                heap.append(&mut rest);
+            }
+        }
+        best
+    }
+}
+```
+# 2024-12-07
+[1760. Minimum Limit of Balls in a Bag](https://leetcode.com/problems/minimum-limit-of-balls-in-a-bag/)
+
+Followed the hints for this one. You create a check function to see if it's possible to split the bags with k balls. If there's too many bags then it's not possible. Then you set up a binary search. It's really fast since it runs at O(log(n))...
+
+## Binary Search
+```Rust
+impl Solution {
+    pub fn minimum_size(nums: Vec<i32>, max_operations: i32) -> i32 {
+        let mut lo = 1;
+        let mut hi = *nums.iter().max().unwrap();
+
+        while lo<hi-1 {
+            let mi = (lo+hi)/2;
+            if check(&nums, max_operations, mi) {
+                hi = mi;
+            } else {
+                lo = mi;
+            }
+        }
+
+        if check(&nums, max_operations, lo) {
+            lo
+        } else {
+            hi
+        }
+    }
+}
+
+fn check(nums: &Vec<i32>, ops: i32, k: i32) -> bool {
+    let mut n_bags = 0;
+    for n in nums.iter() {
+        n_bags += (n+k-1)/k;
+    }
+    n_bags <= nums.len() as i32 + ops
+}
+```
+
+## TLE
+```Rust
+use std::collections::BinaryHeap;
+
+impl Solution {
+    pub fn minimum_size(nums: Vec<i32>, max_operations: i32) -> i32 {
+        let mut ops = max_operations;
+        let mut heap = BinaryHeap::new();
+        
+        for n in nums.iter() {
+            heap.push((*n,*n,1));
+        }
+
+        while ops>0 {
+            let (_,n,d) = heap.pop().unwrap();
+            let v = (n+d)/(d+1);
+            heap.push((v,n,d+1));
+            ops-=1;
+        }
+
+        heap.pop().unwrap().0
+    }
+}
+```
+
 # 2024-12-06
 [2554. Maximum Number of Integers to Choose From a Range I](https://leetcode.com/problems/maximum-number-of-integers-to-choose-from-a-range-i/)
 
