@@ -1,3 +1,98 @@
+# 2024-12-13
+[2593. Find Score of an Array After Marking All Elements](https://leetcode.com/problems/find-score-of-an-array-after-marking-all-elements/)
+
+An easy problem. Just sorting and keeping a boolean array. No need for a heap... We don't need to dynamically sort items. (Using a heap implies sorting.)
+
+## Simple
+```Rust
+impl Solution {
+    pub fn find_score(nums: Vec<i32>) -> i64 {
+        let mut b = vec![false; nums.len()];
+        let mut a: Vec<(i32,i32)> = nums.into_iter().enumerate()
+            .map(|x| (x.1,x.0 as i32)).collect();
+        a.sort_unstable();
+        let mut c = 0;
+        for e in a.into_iter() {
+            let i = e.1 as usize;
+            let s = e.0 as i64;
+            if b[i] {
+                continue;
+            }
+            c += s;
+            b[i] = true;
+            if i>0 {
+                b[i-1] = true;
+            }
+            if i<b.len()-1 {
+                b[i+1] = true;
+            }
+        }
+        c
+    }
+}
+```
+
+## Using Heap
+```Rust
+use std::collections::BinaryHeap;
+impl Solution {
+    pub fn find_score(nums: Vec<i32>) -> i64 {
+        let mut marked = vec![false; nums.len()];
+        let mut heap = BinaryHeap::new();
+        for (i,s) in nums.into_iter().enumerate() {
+            heap.push((0-s,0-i as i32));
+        }
+        let mut sum = 0;
+        while let Some(e) = heap.pop() {
+            let i = (0-e.1) as usize;
+            let s = 0-e.0;
+            //print!("({},{}) ",s,i);
+            if marked[i] {
+                continue;
+            }
+            sum += s as i64;
+            marked[i] = true;
+            if i>0 {
+                marked[i-1] = true;
+            }
+            if i<marked.len()-1 {
+                marked[i+1] = true;
+            }
+        }
+        sum
+    }
+}
+```
+
+# 2024-12-12
+[2558. Take Gifts From the Richest Pile](https://leetcode.com/problems/take-gifts-from-the-richest-pile/)
+
+Straight forward... Heap and cast as a float to implement square root. Fast but not the best memory usage...
+
+```Rust
+use std::collections::BinaryHeap;
+
+impl Solution {
+    pub fn pick_gifts(gifts: Vec<i32>, k: i32) -> i64 {
+        let mut heap = BinaryHeap::new();
+        for g in gifts.iter() {
+            heap.push(*g as i64);
+        }
+        let mut k = k;
+        while k>0 {
+            let n = heap.pop().unwrap();
+            if n == 1 {
+                heap.push(1);
+                break;
+            }
+            let m = (n as f64).sqrt() as i64;
+            heap.push(m);
+            k -= 1;
+        }
+        heap.iter().sum()
+    }
+}
+```
 # 2024-12-11
 [2779. Maximum Beauty of an Array After Applying Operation](https://leetcode.com/problems/maximum-beauty-of-an-array-after-applying-operation/)
 
