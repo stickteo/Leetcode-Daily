@@ -1,3 +1,173 @@
+# 2024-12-18
+[1475. Final Prices With a Special Discount in a Shop](https://leetcode.com/problems/final-prices-with-a-special-discount-in-a-shop/)
+
+The hint simply says to use brute-force... In this case I try to optimize it... There are only 500 elements max... So a brute-force approach would mean around 500^2/2 comparisons max...
+
+The stack-based approach is still decently fast... Tested with 0ms... The worst case (elements are in ascending order) would create a stack with N elements. Otherwise it should run in linear time.
+## Stack-based
+```Rust
+impl Solution {
+    pub fn final_prices(prices: Vec<i32>) -> Vec<i32> {
+        let mut prices = prices;
+        let mut i = 0;
+        let mut stack = Vec::new();
+        while i<prices.len() {
+            match stack.last() {
+                None => {
+                    stack.push(i);
+                    i += 1;
+                }
+                Some(&k) => {
+                    if prices[i]>prices[k] {
+                        stack.push(i);
+                        i += 1;
+                    } else {
+                        stack.pop();
+                        prices[k] -= prices[i];
+                    }
+                }
+            }
+        }
+        prices
+    }
+}
+```
+
+## Attempt
+```Rust
+impl Solution {
+    pub fn final_prices(prices: Vec<i32>) -> Vec<i32> {
+        let mut prices = prices;
+        let mut i = 0;
+        while i<prices.len() {
+            let mut j = i+1;
+            while j<prices.len() && prices[j]>prices[i] {
+                j += 1;
+            }
+            if j>=prices.len() {
+                break;
+            }
+            while i<j {
+                prices[i] -= prices[j];
+                i += 1;
+            }
+        }
+        prices
+    }
+}
+```
+
+# 2024-12-17
+[2182. Construct String With Repeat Limit](https://leetcode.com/problems/construct-string-with-repeat-limit/)
+
+```Rust
+impl Solution {
+    pub fn repeat_limited_string(s: String, repeat_limit: i32) -> String {
+        let mut count = vec![0; 26];
+        for e in s.as_bytes().iter() {
+            count[(*e-b'a') as usize] += 1;
+        }
+        let mut a = Vec::new();
+        for (i,&e) in count.iter().enumerate() {
+            if e!=0 {
+                a.push((i,e));
+            }
+        }
+        //println!("{:?}",a);
+        let mut b = String::new();
+        let mut curr = a.pop().unwrap();
+        while a.len()>0 {
+            if curr.1 > repeat_limit {
+                curr.1 -= repeat_limit;
+                for i in 0..repeat_limit {
+                    b.push((curr.0 as u8+b'a') as char);
+                }
+                if let Some(x) = a.last_mut() {
+                    b.push((x.0 as u8+b'a') as char);
+                    x.1 -= 1;
+                    if x.1 == 0 {
+                        a.pop();
+                    }
+                }
+            } else {
+                for i in 0..curr.1 {
+                    b.push((curr.0 as u8+b'a') as char);
+                }
+                curr = a.pop().unwrap();
+            }
+        }
+        if b.len()==0 || (b.as_bytes()[b.len()-1] != curr.0 as u8+b'a') {
+            let c = repeat_limit.min(curr.1);
+            for i in 0..c {
+                b.push((curr.0 as u8+b'a') as char);
+            }
+        }
+        b
+    }
+}
+```
+# 2024-12-16
+[3264. Final Array State After K Multiplication Operations I](https://leetcode.com/problems/final-array-state-after-k-multiplication-operations-i/)
+
+```Rust
+use std::collections::BinaryHeap;
+impl Solution {
+    pub fn get_final_state(nums: Vec<i32>, k: i32, multiplier: i32) -> Vec<i32> {
+        let mut nums = nums;
+        let mut heap = BinaryHeap::new();
+        for (i,n) in nums.iter().enumerate() {
+            heap.push((0-n,0-i as i32));
+        }
+        let mut k = k;
+        while k>0 {
+            let e = heap.pop().unwrap();
+            let n = (0-e.0)*multiplier;
+            let i = 0-e.1 as usize;
+            nums[i] = n;
+            heap.push((0-n,0-i as i32));
+            k -= 1;
+        }
+        nums
+    }
+}
+```
+
+# 2024-12-14
+[2762. Continuous Subarrays](https://leetcode.com/problems/continuous-subarrays/)
+
+Got it first try. Perhaps a bit complicated using a BTreeMap...
+
+Checking the hints after solving it, I literally did what the hints told me... Sliding window and checking minimums and maximums... Should roughly run in O(n logn) time...
+
+```Rust
+use std::collections::BTreeMap;
+impl Solution {
+    pub fn continuous_subarrays(nums: Vec<i32>) -> i64 {
+        let mut i = 0;
+        let mut j = 0;
+        let mut map = BTreeMap::new();
+        let mut sum = 0;
+        while j<nums.len() {
+            map.entry(nums[j]).and_modify(|x| *x+=1).or_insert(1);
+            let mut lo = *map.first_entry().unwrap().key();
+            let mut hi = *map.last_entry().unwrap().key();
+            while hi-lo>2 {
+                map.entry(nums[i]).and_modify(|x| *x-=1).or_insert(0);
+                if map[&nums[i]] == 0 {
+                    map.remove(&nums[i]);
+                }
+                lo = *map.first_entry().unwrap().key();
+                hi = *map.last_entry().unwrap().key();
+                i += 1;
+            }
+            sum += (j-i+1) as i64;
+            j += 1;
+        }
+        sum
+    }
+}
+```
+
 # 2024-12-13
 [2593. Find Score of an Array After Marking All Elements](https://leetcode.com/problems/find-score-of-an-array-after-marking-all-elements/)
 
