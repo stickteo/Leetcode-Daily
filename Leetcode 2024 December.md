@@ -1,3 +1,100 @@
+# 2024-12-20
+[2415. Reverse Odd Levels of Binary Tree](https://leetcode.com/problems/reverse-odd-levels-of-binary-tree/)
+
+Fast but not memory efficient.
+
+```C
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+int levels(struct TreeNode* node) {
+    int l = 0;
+    while (node) {
+        node = node->left;
+        l++;
+    }
+    return l;
+}
+
+struct TreeNode* reverseOddLevels(struct TreeNode* root) {
+    int l = levels(root);
+    //printf("%d\n",l);
+    struct TreeNode** curr = malloc((1<<l)*sizeof(struct TreeNode*));
+    struct TreeNode** next = malloc((1<<l)*sizeof(struct TreeNode*));
+    curr[0] = root;
+    int cl = 0;
+    while (cl<l) {
+        if (cl&1) {
+            int k = 0;
+            while (k<(1<<(cl-1))) {
+                int t = curr[k]->val;
+                curr[k]->val = curr[(1<<cl)-k-1]->val;
+                curr[(1<<cl)-k-1]->val = t;
+                k++;
+            }
+        }
+        int i = 0;
+        int j = 0;
+        while (i<(1<<cl)) {
+            next[j] = curr[i]->left;
+            j++;
+            next[j] = curr[i]->right;
+            j++;
+            i++;
+        }
+        struct TreeNode** temp = curr;
+        curr = next;
+        next = temp;
+        cl++;
+    }
+    return root;
+}
+```
+# 2024-12-19
+[769. Max Chunks To Make Sorted](https://leetcode.com/problems/max-chunks-to-make-sorted/)
+
+The two key insights is that 0 needs to be a part of the first chunk and each chunk needs to have consecutive values.
+
+The problem's constraints make it easier to solve.
+
+```Rust
+impl Solution {
+    pub fn max_chunks_to_sorted(arr: Vec<i32>) -> i32 {
+        let mut chunks = 1;
+        let mut min = arr[0];
+        let mut max = arr[0];
+        let mut target = 0;
+        let mut count = 1;
+        let mut i = 1;
+        while i<arr.len() {
+            if target>=min && target<=max && count==max-min+1 {
+                target = max+1;
+                min = arr[i];
+                max = arr[i];
+                count = 1;
+                chunks += 1;
+                i += 1;
+                continue;
+            }
+            if arr[i]<min {
+                min = arr[i];
+            }
+            if arr[i]>max {
+                max = arr[i];
+            }
+            count += 1;
+            i += 1;
+        }
+        chunks
+    }
+}
+```
+
 # 2024-12-18
 [1475. Final Prices With a Special Discount in a Shop](https://leetcode.com/problems/final-prices-with-a-special-discount-in-a-shop/)
 
