@@ -1,3 +1,361 @@
+# 2024-12-24
+[3203. Find Minimum Diameter After Merging Two Trees](https://leetcode.com/problems/find-minimum-diameter-after-merging-two-trees/)
+
+Fairly simple logic. The "radius" of the tree can be found by trimming the branches until you get to the "core". (At the same time also finding the core.) The core can either be 1 or 2 nodes. If one node, then the diameter is simply twice the radius. Else if two, it's twice the radius minus one.
+
+From there, if one tree has a really large radius, adding a small tree to it won't affect its diameter. So we compare the sum of the radius of both trees to both the diameters of both trees.
+
+Maybe there's a faster way where you can get the diameter directly without trimming...
+
+```Rust
+use std::collections::HashSet;
+
+impl Solution {
+    pub fn minimum_diameter_after_merge(edges1: Vec<Vec<i32>>, edges2: Vec<Vec<i32>>) -> i32 {
+        let (r1,d1) = diameter(&edges1);
+        let (r2,d2) = diameter(&edges2);
+        let a = vec![r1+r2+1,d1,d2];
+        *a.iter().max().unwrap()
+    }
+}
+
+fn num_nodes(edges: &Vec<Vec<i32>>) -> usize {
+    let mut max = 0;
+    for e in edges.iter() {
+        if e[0]>max {
+            max = e[0];
+        }
+        if e[1]>max {
+            max = e[1];
+        }
+    }
+    (max+1) as usize
+}
+
+fn diameter(edges: &Vec<Vec<i32>>) -> (i32,i32) {
+    //let mut count = vec![0; edges.len()];
+    if edges.len()==0 {
+        return (0,0);
+    }
+    let n = num_nodes(edges);
+    let mut neighbors = vec![HashSet::new(); n];
+    for e in edges.iter() {
+        let a = e[0] as usize;
+        let b = e[1] as usize;
+        //count[a]+=1;
+        //count[b]+=1;
+        neighbors[a].insert(b);
+        neighbors[b].insert(a);
+    }
+    let mut curr = HashSet::new();
+    for (i,e) in neighbors.iter().enumerate() {
+        if e.len() == 1 {
+            curr.insert(i);
+        }
+    }
+    let mut r = 0;
+    let mut count = n;
+    while !curr.is_empty() {
+        //println!("{:?}",curr);
+        r += 1;
+        let mut next = HashSet::new();
+        let mut remove = Vec::new();
+        for &i in curr.iter() {
+            if neighbors[i].len() > 1 {
+                continue;
+            }
+            count -= 1;
+            if neighbors[i].len() == 0 {
+                continue;
+            }
+            let j = *neighbors[i].iter().next().unwrap();
+            //neighbors[j].remove(&i);
+            remove.push((i,j));
+            next.insert(j);
+        }
+        for (i,j) in remove.into_iter() {
+            neighbors[j].remove(&i);
+        }
+        curr = next;
+    }
+    r -= 1;
+    let mut d = r*2;
+    if count>1 {
+        d -= 1;
+    }
+    //println!("{} {}",r,d);
+    (r,d)
+}
+```
+
+# 2024-12-23
+[2471. Minimum Number of Operations to Sort a Binary Tree by Level](https://leetcode.com/problems/minimum-number-of-operations-to-sort-a-binary-tree-by-level/)
+
+Painful to implement in C. Two times slower than the fastest. Luckily not having duplicate values make it easier.
+
+The problem really gets split into two parts... Managing the tree, which was seemingly simple. The other is finding the optimal amount of swaps... We can do it without fancy data structures by continually swapping our current element into its ideal position... Then the swapped element will be our next current element. We loop until we have the ideal element in our position then we move onto the next position.
+
+Perhaps the alternative is not doing any swaps but we simply search until we create a loop with the ideal element for the current position. We would need to make which spots are reached though.
+
+```C
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+int depth(struct TreeNode* node) {
+    if (node == NULL) {
+        return 0;
+    }
+    int l = 1+depth(node->left);
+    int r = 1+depth(node->right);
+    if (l<r) {
+        return r;
+    } else {
+        return l;
+    }
+}
+
+int tree_size(struct TreeNode* node) {
+    if (node == NULL) {
+        return 0;
+    }
+    int s = 1;
+    s += tree_size(node->left);
+    s += tree_size(node->right);
+    return s;
+}
+
+int compare(const void *a, const void *b) {
+    return *(int*)a-*(int*)b;
+}
+
+int num_ops(int len, int *bufa, int *bufb) {
+    for(int i=0; i<len; i++) {
+        bufb[i] = bufa[i];
+    }
+    qsort(bufb,len,sizeof(int),compare);
+    int swaps = 0;
+    for(int i=0; i<len; i++) {
+        if (bufa[i]==bufb[i]) {
+            continue;
+        }
+        //int pos = (bsearch(&bufa[i],bufb,len,sizeof(int),compare)-(void*)bufb)/sizeof(int);
+        int pos = (int*)bsearch(&bufa[i],bufb,len,sizeof(int),compare)-bufb;
+        while (pos!=i) {
+            int t = bufa[i];
+            bufa[i] = bufa[pos];
+            bufa[pos] = t;
+            pos = (int*)bsearch(&bufa[i],bufb,len,sizeof(int),compare)-bufb;
+            swaps++;
+        }
+    }
+    return swaps;
+}
+
+int minimumOperations(struct TreeNode* root) {
+    int d = depth(root);
+    int s = tree_size(root);
+    //printf("%d\n",d);
+    struct TreeNode **curr = malloc(s*sizeof(struct TreeNode*));
+    struct TreeNode **next = malloc(s*sizeof(struct TreeNode*));
+    int *bufa = malloc(s*sizeof(int));
+    int *bufb = malloc(s*sizeof(int));
+    int n = 1;
+    int lvl = 0;
+    int swaps = 0;
+    curr[0] = root;
+    while (lvl<d) {
+        for(int i=0; i<n; i++) {
+            bufa[i] = curr[i]->val;
+            //printf("%d ",curr[i]->val);
+        }
+        //printf("\n");
+        swaps += num_ops(n, bufa, bufb);
+        /*
+        for(int i=0; i<n; i++) {
+            printf("%d ",bufb[i]);
+        }
+        printf("\n");
+        for(int i=0; i<n; i++) {
+            printf("%d ",bufa[i]);
+        }
+        printf("\n");
+        */
+        int m = 0;
+        for(int i=0; i<n; i++) {
+            if (curr[i]->left) {
+                next[m] = curr[i]->left;
+                m++;
+            }
+            if (curr[i]->right) {
+                next[m] = curr[i]->right;
+                m++;
+            }
+        }
+        n = m;
+        lvl++;
+        struct TreeNode **temp = curr;
+        curr = next;
+        next = temp;
+    }
+    return swaps;
+}
+```
+
+# 2024-12-22
+[2940. Find Building Where Alice and Bob Can Meet](https://leetcode.com/problems/find-building-where-alice-and-bob-can-meet/)
+
+Followed the hints for this one. There are several key parts that needed to be figured out... The wording of the question can be better... To my own credit, I figured out the first 3 hints. The last hint basically tells you how to do the problem. The implementation is also technically difficult to get correct.
+
+```Rust
+impl Solution {
+    pub fn leftmost_building_queries(heights: Vec<i32>, queries: Vec<Vec<i32>>) -> Vec<i32> {
+        let mut q = Vec::new();
+        let mut out = vec![-1; queries.len()];
+        for (i,e) in queries.iter().enumerate() {
+            let a = e[0] as usize;
+            let b = e[1] as usize;
+            let n = a.max(b);
+            let h = heights[a].max(heights[b]);
+            if h == heights[n] && (a == b || heights[a] != heights[b]) {
+                out[i] = n as i32;
+            } else {
+                q.push((n,h,i));
+            }
+        }
+        q.sort_unstable();
+        //println!("{:?}",q);
+
+        let mut stack = Vec::new();
+        let mut p = heights.len()-1;
+
+        while let Some((n,h,i)) = q.pop() {
+            while p>n {
+                match stack.last() {
+                    None => {
+                        stack.push(p);
+                        p -= 1;
+                    }
+                    Some(&x) => {
+                        if heights[x]<=heights[p] {
+                            stack.pop();
+                        } else {
+                            stack.push(p);
+                            p -= 1;
+                        }
+                    }
+                }
+            }
+            //println!("({},{},{})",n,h,i);
+            //println!("{:?}", stack);
+            //for k in stack.iter() {
+            //    print!("{} ",heights[*k]);
+            //}
+            //println!();
+            let s = stack.partition_point(|&x| heights[x]>h);
+            //println!("{} {}",s,h);
+            if s==0 {
+                out[i] = -1;
+                continue;
+            }
+            let j = stack[s-1];
+            if j>=heights.len() {
+                out[i] = -1;
+            } else {
+                out[i] = j as i32;
+            }
+        }
+
+        out
+    }
+}
+```
+
+# 2024-12-21
+[2872. Maximum Number of K-Divisible Components](https://leetcode.com/problems/maximum-number-of-k-divisible-components/)
+
+Not too difficult... The implementation can get quite technical...
+
+The main idea is "trimming" the ends of the tree down. It's like a BFS but you aim for nodes with a single edge... Hence the "ends" of the tree.
+
+Not the fastest but not using any particularly fancy data structures... Just vectors are used.
+
+```Rust
+impl Solution {
+    pub fn max_k_divisible_components(n: i32, edges: Vec<Vec<i32>>, values: Vec<i32>, k: i32) -> i32 {
+        if k==1 {
+            return n;
+        }
+        let n = n as usize;
+        if n==1 && values[0]%k==0 {
+            return 1;
+        }
+        let mut count = vec![0; n];
+        let mut neighbors = vec![Vec::new(); n];
+        let mut values = values;
+        for e in edges.iter() {
+            let a = e[0] as usize;
+            let b = e[1] as usize;
+            count[a] += 1;
+            count[b] += 1;
+            neighbors[a].push(b);
+            neighbors[b].push(a);
+        }
+        //println!("{:?}",neighbors);
+        //println!("{:?}",count);
+
+        let mut curr = Vec::new();
+        for i in 0..n {
+            if count[i] == 1 {
+                curr.push(i);
+            }
+            values[i] %= k;
+        }
+        let mut out = 0;
+        let mut reach = vec![false; n];
+        while !curr.is_empty() {
+            //println!("{:?}",curr);
+            let mut next = Vec::new();
+            for i in curr.into_iter() {
+                if reach[i] {
+                    continue;
+                }
+                if count[i] > 1 {
+                    continue;
+                }
+                reach[i] = true;
+                if count[i] == 0 {
+                    //print!("{} ",i);
+                    out += 1;
+                    continue;
+                }
+                let j = neighbors[i][0];
+                if let Some(pos) = neighbors[j].iter().position(|x| *x==i) {
+                    neighbors[j].swap_remove(pos);
+                }
+                count[i] -= 1;
+                count[j] -= 1;
+                if values[i] == 0 {
+                    //print!("{} ",i);
+                    out += 1;
+                } else {
+                    values[j] += values[i];
+                    values[j] %= k;
+                }
+                reach[i] = true;
+                next.push(j);
+            }
+            curr = next;
+        }
+        out
+    }
+}
+```
+
 # 2024-12-20
 [2415. Reverse Odd Levels of Binary Tree](https://leetcode.com/problems/reverse-odd-levels-of-binary-tree/)
 
