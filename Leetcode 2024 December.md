@@ -1,3 +1,298 @@
+# 2024-12-27
+[1014. Best Sightseeing Pair](https://leetcode.com/problems/best-sightseeing-pair/)
+
+~~Not the best approach but works okay.~~ The speed can be optimized so now it runs in O(n) time. We can even further remove an array so it should be O(1) space.
+
+## Space Optimized
+```Rust
+impl Solution {
+    pub fn max_score_sightseeing_pair(values: Vec<i32>) -> i32 {
+        let mut max = 0;
+        let mut b = values[0]-1;
+        for i in 1..values.len() {
+            let v = b+values[i];
+            if max<v {
+                max = v;
+            }
+            if b<values[i] {
+                b = values[i]-1;
+            } else {
+                b -= 1;
+            }
+        }
+        max
+    }
+}
+```
+
+## Time Optimized
+```Rust
+impl Solution {
+    pub fn max_score_sightseeing_pair(values: Vec<i32>) -> i32 {
+        let mut best = vec![0; values.len()];
+        let mut b = values[0]-1;
+        for i in 1..values.len() {
+            best[i] = b;
+            if b<values[i] {
+                b = values[i]-1;
+            } else {
+                b -= 1;
+            }
+        }
+        let mut max = 0;
+        for i in 1..values.len() {
+            let b = values[i]+best[i];
+            if max<b {
+                max = b;
+            }
+        }
+        max
+    }
+}
+```
+
+## Unoptimized
+```Rust
+impl Solution {
+    pub fn max_score_sightseeing_pair(values: Vec<i32>) -> i32 {
+        let mut best = vec![0; values.len()];
+        for (i,v) in values.iter().enumerate() {
+            let mut v = *v-1;
+            for j in i+1..values.len() {
+                if v<=best[j] {
+                    break;
+                }
+                best[j] = v;
+                v -= 1;
+            }
+        }
+        //println!("{:?}",best);
+        let mut max = 0;
+        for i in 1..values.len() {
+            let b = values[i]+best[i];
+            if max<b {
+                max = b;
+            }
+        }
+        max
+    }
+}
+```
+
+# 2024-12-26
+[494. Target Sum](https://leetcode.com/problems/target-sum/)
+
+Convolution method.
+
+Two ways to manage the vectors... Either allocate a new "next" to update "curr" or to swap each while zeroing them.
+
+~~Both seem equally fast (both measures 0ms) but swapping uses slightly less memory. (Well, 0.07MB less memory.)~~
+
+~~Ideally both should be the same and compile to the same assembly... But there is a difference... ~~
+
+Memory use differences seem to be within error with having 3 runs of each.
+
+```Rust
+impl Solution {
+    pub fn find_target_sum_ways(nums: Vec<i32>, target: i32) -> i32 {
+        let mut curr = vec![0; 2001];
+        let mut next = vec![0; 2001];
+        curr[1000] = 1;
+
+        for e in nums.iter() {
+            let e = *e as usize;
+            for i in 0..2001-e {
+                next[i] += curr[i+e];
+            }
+            for i in e..2001 {
+                next[i] += curr[i-e];
+            }
+            for i in 0..2001 {
+                curr[i] = 0;
+            }
+            let mut temp = curr;
+            curr = next;
+            next = temp;
+        }
+
+        curr[target as usize+1000]
+    }
+}
+```
+
+```Rust
+impl Solution {
+    pub fn find_target_sum_ways(nums: Vec<i32>, target: i32) -> i32 {
+        let mut curr = vec![0; 2001];
+        curr[1000] = 1;
+
+        for e in nums.iter() {
+            let e = *e as usize;
+            let mut next = vec![0; 2001];
+            for i in 0..2001-e {
+                next[i] += curr[i+e];
+            }
+            for i in e..2001 {
+                next[i] += curr[i-e];
+            }
+            curr = next;
+        }
+
+        curr[target as usize+1000]
+    }
+}
+```
+
+# 2024-12-25
+[515. Find Largest Value in Each Tree Row](https://leetcode.com/problems/find-largest-value-in-each-tree-row/)
+
+The DFS approach is considerably faster. Indeed, the DFS approach is O(n) where n is the amount of nodes. For the BFS approach, it's O(n log(n)).
+
+## DFS
+```C
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+
+int tree_size(struct TreeNode* node) {
+    if (!node) {
+        return 0;
+    }
+    int size = 1;
+    size += tree_size(node->left);
+    size += tree_size(node->right);
+    return size;
+}
+
+int tree_depth(struct TreeNode* node) {
+    if (!node) {
+        return 0;
+    }
+    int l = 1 + tree_depth(node->left);
+    int r = 1 + tree_depth(node->right);
+    if (l>r) {
+        return l;
+    } else {
+        return r;
+    }
+}
+
+void tree_max(struct TreeNode* node, int* vals, int d) {
+    if (!node) {
+        return;
+    }
+    if (vals[d]<node->val) {
+        vals[d] = node->val;
+    }
+    tree_max(node->left,vals,d+1);
+    tree_max(node->right,vals,d+1);
+}
+
+int* largestValues(struct TreeNode* root, int* returnSize) {
+    if (!root) {
+        *returnSize = 0;
+        return NULL;
+    }
+    int n = tree_size(root);
+    int d = tree_depth(root);
+    int *out = malloc(d*sizeof(int));
+    for (int i=0; i<d; i++) {
+        out[i] = INT_MIN;
+    }
+    tree_max(root,out,0);
+    *returnSize = d;
+    return out;
+}
+```
+
+## BFS
+```C
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     struct TreeNode *left;
+ *     struct TreeNode *right;
+ * };
+ */
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+
+int tree_size(struct TreeNode* node) {
+    if (!node) {
+        return 0;
+    }
+    int size = 1;
+    size += tree_size(node->left);
+    size += tree_size(node->right);
+    return size;
+}
+
+int tree_depth(struct TreeNode* node) {
+    if (!node) {
+        return 0;
+    }
+    int l = 1 + tree_depth(node->left);
+    int r = 1 + tree_depth(node->right);
+    if (l>r) {
+        return l;
+    } else {
+        return r;
+    }
+}
+
+int* largestValues(struct TreeNode* root, int* returnSize) {
+    if (!root) {
+        *returnSize = 0;
+        return NULL;
+    }
+    int n = tree_size(root);
+    int d = tree_depth(root);
+    struct TreeNode** curr = malloc(n*sizeof(struct TreeNode*));
+    struct TreeNode** next = malloc(n*sizeof(struct TreeNode*));
+    int *out = malloc(d*sizeof(int));
+    int m = 1;
+    int j = 0;
+    curr[0] = root;
+
+    while (m>0) {
+        int k=0;
+        int max = INT_MIN;
+        for (int i=0; i<m; i++) {
+            if (curr[i]->left) {
+                next[k] = curr[i]->left;
+                k++;
+            }
+            if (curr[i]->right) {
+                next[k] = curr[i]->right;
+                k++;
+            }
+            if (max<curr[i]->val) {
+                max = curr[i]->val;
+            }
+        }
+        out[j] = max;
+        m = k;
+        struct TreeNode** temp = curr;
+        curr = next;
+        next = temp;
+        j++;
+    }
+
+    *returnSize = d;
+    return out;
+}
+```
+
 # 2024-12-24
 [3203. Find Minimum Diameter After Merging Two Trees](https://leetcode.com/problems/find-minimum-diameter-after-merging-two-trees/)
 
