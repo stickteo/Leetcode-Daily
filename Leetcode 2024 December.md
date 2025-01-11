@@ -1,3 +1,220 @@
+# 2024-12-30
+[2466. Count Ways To Build Good Strings](https://leetcode.com/problems/count-ways-to-build-good-strings/)
+
+## TLE (raw convolution)
+```Rust
+impl Solution {
+    pub fn count_good_strings(low: i32, high: i32, zero: i32, one: i32) -> i32 {
+        let zero = zero as usize;
+        let one = one as usize;
+        let low = low as usize;
+        let high = high as usize;
+        let mut base = zero.min(one);
+        let mut vals = vec![0; (zero as i32-one as i32).abs() as usize+1];
+        vals[zero-base] += 1;
+        vals[one-base] += 1;
+
+        let mut count = 0 as i64;
+        let mut basec = base;
+        let mut valsc = vals.clone();
+
+        while basec <= high {
+            println!("{} {:?}",basec,valsc);
+            if low < basec+valsc.len() {
+                for i in low.max(basec)-basec..(high+1-basec).min(valsc.len()) {
+                    count += valsc[i] as i64;
+                    count %= 1000000007;
+                }
+            }
+            let mut valsn = vec![0; valsc.len()+vals.len()-1];
+            for i in 0..vals.len() {
+                for j in 0..valsc.len() {
+                    valsn[i+j] = ((vals[i] as i64 * valsc[j] as i64 + valsn[i+j] as i64)%1000000007) as i32;
+                }
+            }
+            basec += base;
+            valsc = valsn;
+        }
+
+        //println!("{:?}",vals);
+        count as i32
+    }
+}
+
+```
+# 2024-12-29
+[1639. Number of Ways to Form a Target String Given a Dictionary](https://leetcode.com/problems/number-of-ways-to-form-a-target-string-given-a-dictionary/)
+
+Yet another dynamic programming problem... The general theme is that we require using a lot of memory to speed up computation. Then the problem becomes a sort of puzzle to figure out how to calculate things.
+
+```Rust
+impl Solution {
+    pub fn num_ways(words: Vec<String>, target: String) -> i32 {
+        if target.len()>words[0].len() {
+            return 0;
+        }
+
+        let mut freq = vec![vec![0; 26]; words[0].len()];
+        for w in words.iter() {
+            for (i,a) in w.bytes().enumerate() {
+                let a = (a-b'a') as usize;
+                freq[i][a] += 1;
+            }
+        }
+        //println!("{:?}",freq);
+
+        let target: Vec<_> = target.bytes().map(|x| (&x-b'a') as usize).collect();
+
+        let mut dp = vec![vec![-1; words[0].len()]; target.len()];
+        calc(&freq,&mut dp,&target,0,0);
+        //println!("{:?}",dp);
+        dp[0][0]
+    }
+}
+
+fn calc(freq: &Vec<Vec<i32>>, dp: &mut Vec<Vec<i32>>, target: &Vec<usize>, t: usize, w: usize) -> i32 {
+    if t >= dp.len() {
+        return 1;
+    }
+    if w >= dp[0].len() {
+        return 0;
+    }
+    if dp[t][w] != -1 {
+        return dp[t][w];
+    }
+
+    let mut count = 0;
+    let a = freq[w][target[t]] as i64;
+    if a>0 {
+        count += a*(calc(freq,dp,target,t+1,w+1) as i64);
+    }
+    count += calc(freq,dp,target,t,w+1) as i64;
+    dp[t][w] = (count%1000000007) as i32;
+    dp[t][w]
+}
+}
+```
+
+# 2024-12-28
+[689. Maximum Sum of 3 Non-Overlapping Subarrays](https://leetcode.com/problems/maximum-sum-of-3-non-overlapping-subarrays/)
+
+Works but not very efficient.
+
+```Rust
+impl Solution {
+    pub fn max_sum_of_three_subarrays(nums: Vec<i32>, k: i32) -> Vec<i32> {
+        let k = k as usize;
+        let mut sum = 0;
+        for i in 0..k {
+            sum += nums[i];
+        }
+        let mut sums = Vec::new();
+        sums.push(sum);
+        for i in k..nums.len() {
+            sum -= nums[i-k];
+            sum += nums[i];
+            sums.push(sum);
+        }
+        //println!("{:?}",sums);
+        let mut stackv = Vec::new();
+        let mut stacki = Vec::new();
+        //stack.push(vec![(sums.len()-1,*sums.last().unwrap())]);
+        for i in (0..sums.len()).rev() {
+            match stackv.last() {
+                None => {
+                    stacki.push(vec![i]);
+                    stackv.push(sums[i]);
+                }
+                Some(x) => {
+                    if sums[i]>=*x {
+                        stacki.push(vec![i]);
+                        stackv.push(sums[i]);
+                    }
+                }
+            }
+        }
+        let mut stack: Vec<_> = stacki.iter().zip(stackv.iter()).collect();
+        //println!("{:?}",stack);
+
+        let mut stacki = Vec::new();
+        let mut stackv = Vec::new();
+        let mut i = 0;
+        while i<sums.len() {
+            match stack.last() {
+                None => {
+                    break;
+                }
+                Some(x) => {
+                    if i+k<=x.0[0] {
+                        let mut a = vec![i];
+                        a.extend(x.0);
+                        stacki.push(a);
+                        stackv.push(sums[i]+x.1);
+                        i += 1;
+                    } else {
+                        stack.pop();
+                    }
+                }
+            }
+        }
+        //let mut stack: Vec<_> = stacki.iter().zip(stackv.iter()).collect();
+        //println!("{:?}",stack);
+        let mut stack = Vec::new();
+        for i in (0..stackv.len()).rev() {
+            match stack.last() {
+                None => {
+                    stack.push((stacki[i].clone(),stackv[i]));
+                }
+                Some(x) => {
+                    if stackv[i]>=x.1 {
+                        stack.push((stacki[i].clone(),stackv[i]));
+                    }
+                }
+            }
+        }
+        //println!("{:?}",stack);
+
+        let mut stacki = Vec::new();
+        let mut stackv = Vec::new();
+        let mut i = 0;
+        while i<sums.len() {
+            match stack.last() {
+                None => {
+                    break;
+                }
+                Some(x) => {
+                    if i+k<=x.0[0] {
+                        let mut a = vec![i];
+                        a.extend(&x.0);
+                        stacki.push(a);
+                        stackv.push(sums[i]+x.1);
+                        i += 1;
+                    } else {
+                        stack.pop();
+                    }
+                }
+            }
+        }
+        let mut stack = Vec::new();
+        for i in (0..stackv.len()).rev() {
+            match stack.last() {
+                None => {
+                    stack.push((stacki[i].clone(),stackv[i]));
+                }
+                Some(x) => {
+                    if stackv[i]>=x.1 {
+                        stack.push((stacki[i].clone(),stackv[i]));
+                    }
+                }
+            }
+        }
+        //println!("{:?}",stack);
+
+        stack.last().unwrap().0.iter().map(|x| *x as i32).collect()
+    }
+}
+```
+
 # 2024-12-27
 [1014. Best Sightseeing Pair](https://leetcode.com/problems/best-sightseeing-pair/)
 
